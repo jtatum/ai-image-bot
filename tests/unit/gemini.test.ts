@@ -154,7 +154,7 @@ describe('GeminiService', () => {
       const service = new GeminiService()
       const result = await service.generateImage('test prompt')
 
-      expect(result).toEqual({ success: false, error: 'Failed to generate image' })
+      expect(result).toEqual({ success: false, error: 'Some text response without image' })
     })
 
     it('should return error result when no candidates in response', async () => {

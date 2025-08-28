@@ -92,6 +92,11 @@ export class GeminiService {
             logger.info('✅ Image generated successfully')
             return { success: true, buffer: Buffer.from(part.inlineData.data, 'base64') }
           }
+          // Handle text responses (e.g., content filtering explanations)
+          if (part.text) {
+            logger.info('Gemini returned text response instead of image')
+            return { success: false, error: part.text }
+          }
         }
       }
 
@@ -167,6 +172,11 @@ export class GeminiService {
           if (part.inlineData && part.inlineData.data) {
             logger.info('✅ Image edited successfully')
             return { success: true, buffer: Buffer.from(part.inlineData.data, 'base64') }
+          }
+          // Handle text responses (e.g., content filtering explanations)
+          if (part.text) {
+            logger.info('Gemini returned text response instead of image for edit')
+            return { success: false, error: part.text }
           }
         }
       }
