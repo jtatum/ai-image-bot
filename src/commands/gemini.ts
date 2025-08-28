@@ -3,6 +3,7 @@ import { Command } from '@/bot/types.js'
 import { geminiService } from '@/services/gemini.js'
 import { config } from '@/config/environment.js'
 import logger from '@/config/logger.js'
+import { createImageFilename } from '@/utils/filename.js'
 
 const gemini: Command = {
   data: new SlashCommandBuilder()
@@ -49,9 +50,10 @@ const gemini: Command = {
         return
       }
 
-      // Create Discord attachment
+      // Create Discord attachment with user-specific filename
+      const filename = createImageFilename(interaction.user.username, prompt)
       const attachment = new AttachmentBuilder(imageBuffer, {
-        name: 'gemini-generated-image.png',
+        name: filename,
         description: `Generated image: ${prompt.substring(0, 100)}`,
       })
 
