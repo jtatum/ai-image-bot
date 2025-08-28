@@ -1,93 +1,138 @@
-# Claude Development Guide
+# CLAUDE.md
 
-This file contains development instructions and commands for Claude Code to help maintain and extend the Gemini Discord Bot.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Quick Commands
+## Essential Commands
 
 ### Development
 
-- `npm run dev` - Start development server with hot reload
-- `npm run build` - Build TypeScript to JavaScript
+- `npm run dev` - Development server with hot reload using tsx
+- `npm run build` - Build TypeScript to JavaScript with tsc and tsc-alias
 - `npm start` - Start production build
 - `npm run deploy-commands` - Deploy slash commands to Discord globally
-- `npm run deploy-commands:guild <GUILD_ID>` - Deploy commands to specific guild (faster)
+- `npm run deploy-commands:guild <GUILD_ID>` - Deploy to specific guild (faster for development)
 
 ### Testing
 
-- `npm test` - Run all tests
-- `npm run test:watch` - Run tests in watch mode
-- `npm run test:coverage` - Run tests with coverage report
+- `npm test` - Run all tests (currently 35 tests with 100% pass rate)
+- `npm test tests/unit/gemini.test.ts` - Run specific test file
+- `npm test tests/unit/interactionCreate.test.ts` - Test cooldown logic
+- `npm run test:watch` - Watch mode for development
+- `npm run test:coverage` - Coverage report
 
 ### Code Quality
 
-- `npm run lint` - Run ESLint
-- `npm run lint:fix` - Fix linting issues automatically
-- `npm run format` - Format code with Prettier
-- `npm run type-check` - Check TypeScript types
+- `npm run lint` - ESLint check
+- `npm run lint:fix` - Auto-fix linting issues
+- `npm run type-check` - TypeScript type checking
+- `npm run format` - Prettier formatting
 
-### Docker
+## Architecture Overview
 
-- `docker-compose up -d` - Start production containers
-- `docker-compose -f docker-compose.dev.yml up` - Start development containers
-- `docker-compose --profile with-db up -d` - Start with PostgreSQL and Redis
+### Core System Design
 
-## Project Structure
+The bot uses an **ExtendedClient** pattern where the Discord.js Client is extended with:
 
-- `src/bot/` - Core bot functionality (client, types)
-- `src/commands/` - Slash command handlers
-- `src/events/` - Discord event listeners
-- `src/services/` - Business logic and external integrations
-- `src/utils/` - Utility functions and helpers
-- `src/config/` - Configuration management
-- `tests/` - Test files (unit, integration)
+- `commands: Collection<string, Command>` - Dynamically loaded slash commands
+- `cooldowns: Collection<string, Collection<string, number>>` - Per-user, per-command cooldown tracking
+- `shutdown(): Promise<void>` - Graceful shutdown method
 
-## Common Tasks
+### Key Architectural Patterns
 
-### Adding a New Command
+**Command System**: Commands are auto-loaded from `src/commands/` and must implement the `Command` interface:
 
-1. Create file in `src/commands/newcommand.ts`
-2. Follow the Command interface pattern
-3. Run `npm run deploy-commands` to register with Discord
-4. Add tests in `tests/unit/commands/`
+```typescript
+interface Command {
+  data: SlashCommandBuilder
+  execute: (interaction: ChatInputCommandInteraction) => Promise<void>
+  cooldown?: number // seconds, 0 disables cooldowns entirely
+}
+```
 
-### Adding a New Event
+**Event System**: Events are auto-loaded from `src/events/` following the `Event` interface pattern.
 
-1. Create file in `src/events/newevent.ts`
-2. Follow the Event interface pattern
-3. Event will be automatically loaded on restart
+**Cooldown Architecture**: The sophisticated cooldown system in `interactionCreate.ts`:
 
-### Environment Setup
+- Uses nested Collections: `client.cooldowns.get(commandName).get(userId)`
+- Supports `cooldown: 0` to completely disable cooldowns for a command
+- Falls back to `command.cooldown ?? 3` for default behavior
+- Uses `COMMAND_COOLDOWN_SECONDS` environment variable as global default
 
-1. Copy `.env.example` to `.env`
-2. Set required variables: `DISCORD_TOKEN`, `CLIENT_ID`
-3. Optional: Set `LOG_LEVEL`, `NODE_ENV`, etc.
+**Service Layer**: External integrations like `GeminiService` are implemented as classes with:
 
-### Running Tests
+- Constructor-time initialization based on environment variables
+- `isAvailable()` method to check if service is configured
+- Proper error handling and logging
 
-- Unit tests: `npm test tests/unit/`
-- Integration tests: `npm test tests/integration/`
-- Specific test file: `npm test -- <filename>`
+### Environment Configuration
 
-## Deployment Notes
+Uses **Zod validation** in `src/config/environment.ts` with strict type checking. Key variables:
 
-- Production builds require `npm run build` first
-- Use environment-specific Docker Compose files
+- `DISCORD_TOKEN`, `CLIENT_ID` (required)
+- `GOOGLE_API_KEY` (optional, enables Gemini image generation)
+- `COMMAND_COOLDOWN_SECONDS` (default: 30, set to 0 to disable globally)
+
+### Path Aliases
+
+The project uses TypeScript path aliases (`@/*`) that map to `src/*`. Both production code and tests use these aliases, requiring proper Jest configuration with `moduleNameMapper`.
+
+## Testing Architecture
+
+### Test Structure
+
+- **100% test coverage** with comprehensive suites
+- Jest with ESM support and custom configuration
+- Uses `ts-jest` with `strict: false` for tests to handle complex Discord.js mocking
+
+### Critical Testing Patterns
+
+- **Mock Timing**: Mocks must be defined BEFORE any imports that use them
+- **Config Mocking**: The environment config is loaded once, so tests mock the config object directly, not process.env
+- **Stateful Mocks**: Cooldown tests require stateful mocks that actually track state between calls
+- **Service Mocking**: External APIs (like Google Gemini) are mocked at the module level
+
+### Test Setup Files
+
+- `tests/setup.ts` - Global Jest configuration and Discord.js mocking
+- `tests/setupEnv.js` - Environment variables for tests
+- `.env.test` - Test environment configuration
+
+## Google Gemini Integration
+
+The `GeminiService` class handles AI image generation:
+
+- Uses `@google/genai` package with `gemini-2.5-flash-image-preview` model
+- Converts base64 response data to Buffer for Discord attachments
+- Gracefully handles missing API keys (service becomes unavailable)
+- Implements proper error handling and safety filtering
+
+## Development Patterns
+
+### Adding New Commands
+
+1. Create `src/commands/commandname.ts` implementing `Command` interface
+2. Set appropriate `cooldown` value (or 0 to disable)
+3. Add comprehensive tests in `tests/unit/`
+4. Deploy with `npm run deploy-commands`
+
+### Working with Cooldowns
+
+- Use `cooldown: 0` to completely bypass cooldown logic
+- Default cooldown is 3 seconds unless overridden
+- Global default can be set via `COMMAND_COOLDOWN_SECONDS` environment variable
+- Cooldowns are per-user, per-command
+
+### Testing Strategy
+
+- Mock external dependencies before imports
+- Use stateful mocks for collections and cooldown tracking
+- Test both success and error paths
+- Verify cooldown behavior with timer mocking
+
+## Production Considerations
+
 - Health checks available at `:3001/health`
-- Logs stored in `logs/` directory
-- Graceful shutdown with SIGTERM/SIGINT
-
-## Troubleshooting
-
-- Check logs in `logs/` directory
-- Verify environment variables in `.env`
-- Ensure Discord token and permissions are correct
-- Test commands locally before deploying
-- Use health check endpoint to verify status
-
-## Security Considerations
-
-- Never commit `.env` files
-- Validate all user inputs
-- Check permissions before command execution
-- Use HTTPS for external URLs only
-- Rate limiting is enforced per user/command
+- Graceful shutdown handles SIGTERM/SIGINT
+- Winston logging with structured output
+- Docker containerization with non-root execution
+- Environment validation prevents startup with invalid configuration

@@ -9,7 +9,11 @@
       "Bash(npm run test:coverage:*)",
       "Bash(npm run format:*)",
       "Bash(npm run start:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "Bash(npm run deploy-commands:*)",
+      "Bash(npm test:*)"
     ],
     "deny": [],
     "ask": []

@@ -13,10 +13,12 @@ const environmentSchema = z.object({
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
   DATABASE_URL: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
+  GOOGLE_API_KEY: z.string().optional(),
   PORT: z.coerce.number().default(3000),
   HEALTH_CHECK_PORT: z.coerce.number().default(3001),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
+  COMMAND_COOLDOWN_SECONDS: z.coerce.number().default(30),
 })
 
 export type Environment = z.infer<typeof environmentSchema>

@@ -1,4 +1,4 @@
-import { Client, Collection, GatewayIntentBits, Partials } from 'discord.js'
+import { Client, Collection, GatewayIntentBits } from 'discord.js'
 import { Command, ExtendedClient } from './types.js'
 import logger from '@/config/logger.js'
 import { config } from '@/config/environment.js'
@@ -9,15 +9,8 @@ export class DiscordClient extends Client implements ExtendedClient {
 
   constructor() {
     super({
-      intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildMessageReactions,
-        GatewayIntentBits.DirectMessages,
-      ],
-      partials: [Partials.Message, Partials.Channel, Partials.Reaction],
+      intents: [GatewayIntentBits.Guilds],
+      partials: [],
       presence: {
         status: 'online',
         activities: [

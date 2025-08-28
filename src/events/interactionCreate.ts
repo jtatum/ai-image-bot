@@ -15,30 +15,33 @@ const interactionCreate: Event = {
       return
     }
 
-    // Cooldown management
-    if (!client.cooldowns.has(command.data.name)) {
-      client.cooldowns.set(command.data.name, new Collection())
-    }
-
-    const now = Date.now()
-    const timestamps = client.cooldowns.get(command.data.name)!
-    const cooldownAmount = (command.cooldown || 3) * 1000
-
-    if (timestamps.has(interaction.user.id)) {
-      const expirationTime = timestamps.get(interaction.user.id)! + cooldownAmount
-
-      if (now < expirationTime) {
-        const timeLeft = (expirationTime - now) / 1000
-        await interaction.reply({
-          content: `⏳ Please wait ${timeLeft.toFixed(1)} more seconds before using \`${command.data.name}\` again.`,
-          ephemeral: true,
-        })
-        return
+    // Cooldown management - skip if cooldown is 0
+    const cooldownSeconds = command.cooldown ?? 3
+    if (cooldownSeconds > 0) {
+      if (!client.cooldowns.has(command.data.name)) {
+        client.cooldowns.set(command.data.name, new Collection())
       }
-    }
 
-    timestamps.set(interaction.user.id, now)
-    setTimeout(() => timestamps.delete(interaction.user.id), cooldownAmount)
+      const now = Date.now()
+      const timestamps = client.cooldowns.get(command.data.name)!
+      const cooldownAmount = cooldownSeconds * 1000
+
+      if (timestamps.has(interaction.user.id)) {
+        const expirationTime = timestamps.get(interaction.user.id)! + cooldownAmount
+
+        if (now < expirationTime) {
+          const timeLeft = (expirationTime - now) / 1000
+          await interaction.reply({
+            content: `⏳ Please wait ${timeLeft.toFixed(1)} more seconds before using \`${command.data.name}\` again.`,
+            ephemeral: true,
+          })
+          return
+        }
+      }
+
+      timestamps.set(interaction.user.id, now)
+      setTimeout(() => timestamps.delete(interaction.user.id), cooldownAmount)
+    }
 
     try {
       logger.info(

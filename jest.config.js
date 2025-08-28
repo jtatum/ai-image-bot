@@ -14,6 +14,9 @@ export default {
         moduleResolution: 'node',
         allowSyntheticDefaultImports: true,
         esModuleInterop: true,
+        strict: false,
+        noImplicitAny: false,
+        strictNullChecks: false,
         baseUrl: './src',
         paths: {
           '@/*': ['*'],

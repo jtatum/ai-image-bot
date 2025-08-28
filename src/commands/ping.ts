@@ -1,12 +1,13 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js'
 import { Command } from '@/bot/types.js'
+import { config } from '@/config/environment.js'
 
 const ping: Command = {
   data: new SlashCommandBuilder()
     .setName('ping')
     .setDescription('Replies with Pong! and shows bot latency'),
 
-  cooldown: 5,
+  cooldown: config.COMMAND_COOLDOWN_SECONDS,
 
   async execute(interaction: ChatInputCommandInteraction) {
     const sent = await interaction.reply({

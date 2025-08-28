@@ -10,6 +10,8 @@ process.env.PORT = '3000' // Override .env file
 process.env.HEALTH_CHECK_PORT = '3001'
 process.env.RATE_LIMIT_WINDOW_MS = '60000'
 process.env.RATE_LIMIT_MAX_REQUESTS = '100'
+process.env.GOOGLE_API_KEY = 'test_google_api_key'
+process.env.COMMAND_COOLDOWN_SECONDS = '30'
 
 // Mock Discord.js client for testing
 jest.mock('discord.js', () => ({
@@ -107,6 +109,19 @@ jest.mock('@/bot/client.js', () => ({
     return this
   })
 }))
+
+// Mock logger globally - must be before any imports that use it
+jest.mock('@/config/logger.js', () => ({
+  __esModule: true,
+  default: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+  },
+}))
+
+// @google/genai is mocked in individual test files as needed
 
 // Global test timeout
 jest.setTimeout(10000)

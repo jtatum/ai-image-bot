@@ -1,0 +1,77 @@
+import { SlashCommandBuilder, ChatInputCommandInteraction, AttachmentBuilder } from 'discord.js'
+import { Command } from '@/bot/types.js'
+import { geminiService } from '@/services/gemini.js'
+import { config } from '@/config/environment.js'
+import logger from '@/config/logger.js'
+
+const gemini: Command = {
+  data: new SlashCommandBuilder()
+    .setName('gemini')
+    .setDescription('Generate an image using Google Gemini AI')
+    .addStringOption(option =>
+      option
+        .setName('prompt')
+        .setDescription('Description of the image you want to generate')
+        .setRequired(true)
+        .setMaxLength(1000)
+    ) as SlashCommandBuilder,
+
+  cooldown: config.COMMAND_COOLDOWN_SECONDS,
+
+  async execute(interaction: ChatInputCommandInteraction) {
+    const prompt = interaction.options.getString('prompt', true)
+
+    // Check if Gemini service is available
+    if (!geminiService.isAvailable()) {
+      await interaction.reply({
+        content: '❌ Image generation is currently unavailable. Please try again later.',
+        ephemeral: true,
+      })
+      return
+    }
+
+    // Defer reply since image generation takes time
+    await interaction.deferReply()
+
+    try {
+      logger.info(
+        `Image generation requested by ${interaction.user.tag} in ${interaction.guild?.name || 'DM'}: "${prompt}"`
+      )
+
+      // Generate the image
+      const imageBuffer = await geminiService.generateImage(prompt)
+
+      if (!imageBuffer) {
+        await interaction.editReply({
+          content:
+            '❌ Failed to generate image. The prompt may have been filtered for safety reasons.',
+        })
+        return
+      }
+
+      // Create Discord attachment
+      const attachment = new AttachmentBuilder(imageBuffer, {
+        name: 'gemini-generated-image.png',
+        description: `Generated image: ${prompt.substring(0, 100)}`,
+      })
+
+      // Send the generated image
+      await interaction.editReply({
+        content: `🎨 **Image generated successfully!**\n**Prompt:** ${prompt}`,
+        files: [attachment],
+      })
+
+      logger.info(`✅ Image generated and sent for prompt: "${prompt.substring(0, 50)}..."`)
+    } catch (error) {
+      logger.error('Error in gemini command:', error)
+
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+
+      await interaction.editReply({
+        content: `❌ Failed to generate image: ${errorMessage}`,
+      })
+    }
+  },
+}
+
+export default gemini

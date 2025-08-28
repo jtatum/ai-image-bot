@@ -32,10 +32,7 @@ class GeminiBot {
   }
 
   private setupRateLimiters(): void {
-    // Setup rate limiters for specific commands
-    this.rateLimiter.createCommandLimiter('ping', 10, 60) // 10 uses per minute
-    this.rateLimiter.createCommandLimiter('info', 5, 300) // 5 uses per 5 minutes
-
+    // Global rate limiting is now handled by individual command cooldowns
     // Add the rate limiter to the client for use in command handlers
     ;(this.client as any).rateLimiter = this.rateLimiter
   }

@@ -7,7 +7,7 @@ const info: Command = {
     .setName('info')
     .setDescription('Displays information about the bot'),
 
-  cooldown: 10,
+  cooldown: config.COMMAND_COOLDOWN_SECONDS,
 
   async execute(interaction: ChatInputCommandInteraction) {
     const client = interaction.client
