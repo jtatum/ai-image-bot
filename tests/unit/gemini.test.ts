@@ -112,10 +112,10 @@ describe('GeminiService', () => {
         model: 'gemini-2.5-flash-image-preview',
         contents: ['a cute robot'],
       })
-      expect(result).toEqual(expectedBuffer)
+      expect(result).toEqual({ success: true, buffer: expectedBuffer })
     })
 
-    it('should return null when no image data is found in response', async () => {
+    it('should return error result when no image data is found in response', async () => {
       mockConfig.GOOGLE_API_KEY = 'test-api-key'
 
       // @ts-ignore
@@ -136,10 +136,10 @@ describe('GeminiService', () => {
       const service = new GeminiService()
       const result = await service.generateImage('test prompt')
 
-      expect(result).toBeNull()
+      expect(result).toEqual({ success: false, error: 'Failed to generate image' })
     })
 
-    it('should return null when no candidates in response', async () => {
+    it('should return error result when no candidates in response', async () => {
       mockConfig.GOOGLE_API_KEY = 'test-api-key'
 
       // @ts-ignore
@@ -150,7 +150,7 @@ describe('GeminiService', () => {
       const service = new GeminiService()
       const result = await service.generateImage('test prompt')
 
-      expect(result).toBeNull()
+      expect(result).toEqual({ success: false, error: 'Failed to generate image' })
     })
 
     it('should handle API errors and re-throw them', async () => {
@@ -185,7 +185,7 @@ describe('GeminiService', () => {
       const service = new GeminiService()
       const result = await service.generateImage('inappropriate content')
 
-      expect(result).toBeNull()
+      expect(result).toEqual({ success: false, error: 'Generation stopped: SAFETY' })
     })
   })
 })

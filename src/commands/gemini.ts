@@ -40,19 +40,18 @@ const gemini: Command = {
       )
 
       // Generate the image
-      const imageBuffer = await geminiService.generateImage(prompt)
+      const result = await geminiService.generateImage(prompt)
 
-      if (!imageBuffer) {
+      if (!result.success) {
         await interaction.editReply({
-          content:
-            '❌ Failed to generate image. The prompt may have been filtered for safety reasons.',
+          content: `❌ ${result.error || 'Failed to generate image'}\n**Prompt:** ${prompt}`,
         })
         return
       }
 
       // Create Discord attachment with user-specific filename
       const filename = createImageFilename(interaction.user.username, prompt)
-      const attachment = new AttachmentBuilder(imageBuffer, {
+      const attachment = new AttachmentBuilder(result.buffer!, {
         name: filename,
         description: `Generated image: ${prompt.substring(0, 100)}`,
       })

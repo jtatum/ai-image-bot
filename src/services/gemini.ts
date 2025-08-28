@@ -3,6 +3,12 @@ import { config } from '@/config/environment.js'
 import logger from '@/config/logger.js'
 import { Buffer } from 'node:buffer'
 
+export interface GenerateImageResult {
+  success: boolean
+  buffer?: Buffer
+  error?: string
+}
+
 export class GeminiService {
   private client: GoogleGenAI | null = null
 
@@ -21,7 +27,7 @@ export class GeminiService {
     return this.client !== null
   }
 
-  public async generateImage(prompt: string): Promise<Buffer | null> {
+  public async generateImage(prompt: string): Promise<GenerateImageResult> {
     if (!this.client) {
       throw new Error('Gemini service not available - API key not configured')
     }
@@ -39,13 +45,39 @@ export class GeminiService {
         for (const part of response.candidates[0].content.parts) {
           if (part.inlineData && part.inlineData.data) {
             logger.info('✅ Image generated successfully')
-            return Buffer.from(part.inlineData.data, 'base64')
+            return { success: true, buffer: Buffer.from(part.inlineData.data, 'base64') }
           }
         }
       }
 
-      logger.warn('No image data found in response')
-      return null
+      // Check for error information
+      let errorMessage = 'Failed to generate image'
+
+      // Check promptFeedback for safety filtering
+      if (response.promptFeedback?.blockReason) {
+        errorMessage = `Content blocked: ${response.promptFeedback.blockReason}`
+      }
+
+      // Check candidates finishReason
+      if (response.candidates && response.candidates[0]?.finishReason) {
+        const finishReason = response.candidates[0].finishReason
+        if (finishReason !== 'STOP') {
+          errorMessage = `Generation stopped: ${finishReason}`
+        }
+      }
+
+      logger.warn(
+        JSON.stringify(
+          {
+            ...(response.candidates && { candidates: response.candidates }),
+            ...(response.promptFeedback && { promptFeedback: response.promptFeedback }),
+          },
+          null,
+          2
+        )
+      )
+
+      return { success: false, error: errorMessage }
     } catch (error) {
       logger.error('Failed to generate image with Gemini:', error)
       throw error
