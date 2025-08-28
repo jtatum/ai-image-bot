@@ -1,4 +1,11 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, AttachmentBuilder } from 'discord.js'
+import {
+  SlashCommandBuilder,
+  ChatInputCommandInteraction,
+  AttachmentBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} from 'discord.js'
 import { Command } from '@/bot/types.js'
 import { geminiService } from '@/services/gemini.js'
 import { config } from '@/config/environment.js'
@@ -56,10 +63,19 @@ const gemini: Command = {
         description: `Generated image: ${prompt.substring(0, 100)}`,
       })
 
-      // Send the generated image
+      // Create refresh button
+      const refreshButton = new ButtonBuilder()
+        .setCustomId(`regenerate_${interaction.user.id}_${Date.now()}`)
+        .setLabel('🔄 Regenerate')
+        .setStyle(ButtonStyle.Secondary)
+
+      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(refreshButton)
+
+      // Send the generated image with refresh button
       await interaction.editReply({
         content: `🎨 **Image generated successfully!**\n**Prompt:** ${prompt}`,
         files: [attachment],
+        components: [row],
       })
 
       logger.info(`✅ Image generated and sent for prompt: "${prompt.substring(0, 50)}..."`)

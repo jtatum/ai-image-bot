@@ -71,6 +71,40 @@ jest.mock('discord.js', () => ({
     setTimestamp: jest.fn().mockReturnThis(),
     setFooter: jest.fn().mockReturnThis()
   })),
+  ActionRowBuilder: jest.fn().mockImplementation(() => ({
+    addComponents: jest.fn().mockReturnThis()
+  })),
+  ButtonBuilder: jest.fn().mockImplementation(() => ({
+    setCustomId: jest.fn().mockReturnThis(),
+    setLabel: jest.fn().mockReturnThis(),
+    setStyle: jest.fn().mockReturnThis()
+  })),
+  ButtonStyle: {
+    Primary: 1,
+    Secondary: 2,
+    Success: 3,
+    Danger: 4,
+    Link: 5
+  },
+  ModalBuilder: jest.fn().mockImplementation(() => ({
+    setCustomId: jest.fn().mockReturnThis(),
+    setTitle: jest.fn().mockReturnThis(),
+    addComponents: jest.fn().mockReturnThis()
+  })),
+  TextInputBuilder: jest.fn().mockImplementation(() => ({
+    setCustomId: jest.fn().mockReturnThis(),
+    setLabel: jest.fn().mockReturnThis(),
+    setStyle: jest.fn().mockReturnThis(),
+    setPlaceholder: jest.fn().mockReturnThis(),
+    setValue: jest.fn().mockReturnThis(),
+    setRequired: jest.fn().mockReturnThis(),
+    setMaxLength: jest.fn().mockReturnThis()
+  })),
+  TextInputStyle: {
+    Short: 1,
+    Paragraph: 2
+  },
+  AttachmentBuilder: jest.fn().mockImplementation(() => ({})),
   Events: {
     ClientReady: 'ready',
     InteractionCreate: 'interactionCreate',

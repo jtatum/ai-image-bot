@@ -84,6 +84,8 @@ describe('InteractionCreate Event', () => {
     // @ts-ignore
     mockInteraction = {
       isChatInputCommand: jest.fn().mockReturnValue(true),
+      isButton: jest.fn().mockReturnValue(false),
+      isModalSubmit: jest.fn().mockReturnValue(false),
       commandName: 'test',
       user: { id: 'user123', tag: 'TestUser#1234' },
       guild: { name: 'TestGuild' },
@@ -101,6 +103,140 @@ describe('InteractionCreate Event', () => {
 
   afterEach(() => {
     jest.useRealTimers()
+  })
+
+  describe('Button Interactions', () => {
+    it('should handle regenerate button interactions', async () => {
+      const mockButtonInteraction = {
+        ...mockInteraction,
+        isButton: jest.fn().mockReturnValue(true),
+        isChatInputCommand: jest.fn().mockReturnValue(false),
+        isModalSubmit: jest.fn().mockReturnValue(false),
+        customId: 'regenerate_user123_1234567890',
+        message: {
+          content: '🎨 **Image generated successfully!**\n**Prompt:** test prompt',
+        },
+        // @ts-ignore
+        showModal: jest.fn().mockResolvedValue({}),
+      } as any
+
+      await interactionCreateEvent.execute(mockButtonInteraction)
+
+      expect(mockButtonInteraction.showModal).toHaveBeenCalled()
+      expect(mockCommand.execute).not.toHaveBeenCalled()
+    })
+
+    it('should ignore non-regenerate button interactions', async () => {
+      const mockButtonInteraction = {
+        ...mockInteraction,
+        isButton: jest.fn().mockReturnValue(true),
+        isChatInputCommand: jest.fn().mockReturnValue(false),
+        isModalSubmit: jest.fn().mockReturnValue(false),
+        customId: 'some_other_button',
+      } as any
+
+      await interactionCreateEvent.execute(mockButtonInteraction)
+
+      expect(mockCommand.execute).not.toHaveBeenCalled()
+    })
+
+    it('should handle button interaction errors gracefully', async () => {
+      const mockButtonInteraction = {
+        ...mockInteraction,
+        isButton: jest.fn().mockReturnValue(true),
+        isChatInputCommand: jest.fn().mockReturnValue(false),
+        isModalSubmit: jest.fn().mockReturnValue(false),
+        customId: 'regenerate_user123_1234567890',
+        message: null, // This will cause an error in handleRegenerateButton
+        // @ts-ignore
+        showModal: jest.fn().mockResolvedValue({}),
+        // @ts-ignore
+        reply: jest.fn().mockResolvedValue({}),
+      } as any
+
+      await interactionCreateEvent.execute(mockButtonInteraction)
+
+      expect(mockButtonInteraction.reply).toHaveBeenCalledWith({
+        content: '❌ There was an error processing your request!',
+        ephemeral: true,
+      })
+    })
+  })
+
+  describe('Modal Interactions', () => {
+    beforeEach(() => {
+      // Mock the gemini service for modal tests
+      jest.doMock('@/services/gemini.js', () => ({
+        geminiService: {
+          isAvailable: jest.fn().mockReturnValue(true),
+          // @ts-ignore
+          generateImage: jest.fn().mockResolvedValue({
+            success: true,
+            buffer: Buffer.from('fake-image-data'),
+          }),
+        },
+      }))
+    })
+
+    it('should handle regenerate modal submissions', async () => {
+      const mockModalInteraction = {
+        ...mockInteraction,
+        isButton: jest.fn().mockReturnValue(false),
+        isChatInputCommand: jest.fn().mockReturnValue(false),
+        isModalSubmit: jest.fn().mockReturnValue(true),
+        customId: 'regenerate_modal_user123_1234567890',
+        fields: {
+          getTextInputValue: jest.fn().mockReturnValue('new test prompt'),
+        },
+        // @ts-ignore
+        deferReply: jest.fn().mockResolvedValue({}),
+        // @ts-ignore
+        editReply: jest.fn().mockResolvedValue({}),
+      } as any
+
+      await interactionCreateEvent.execute(mockModalInteraction)
+
+      expect(mockModalInteraction.deferReply).toHaveBeenCalledWith({ ephemeral: false })
+      expect(mockCommand.execute).not.toHaveBeenCalled()
+    })
+
+    it('should ignore non-regenerate modal submissions', async () => {
+      const mockModalInteraction = {
+        ...mockInteraction,
+        isButton: jest.fn().mockReturnValue(false),
+        isChatInputCommand: jest.fn().mockReturnValue(false),
+        isModalSubmit: jest.fn().mockReturnValue(true),
+        customId: 'some_other_modal',
+      } as any
+
+      await interactionCreateEvent.execute(mockModalInteraction)
+
+      expect(mockCommand.execute).not.toHaveBeenCalled()
+    })
+
+    it('should handle modal interaction errors gracefully', async () => {
+      const mockModalInteraction = {
+        ...mockInteraction,
+        isButton: jest.fn().mockReturnValue(false),
+        isChatInputCommand: jest.fn().mockReturnValue(false),
+        isModalSubmit: jest.fn().mockReturnValue(true),
+        customId: 'regenerate_modal_user123_1234567890',
+        fields: {
+          getTextInputValue: jest.fn().mockImplementation(() => {
+            throw new Error('Mock field error')
+          }),
+        },
+        // @ts-ignore
+        reply: jest.fn().mockResolvedValue({}),
+      } as any
+
+      await interactionCreateEvent.execute(mockModalInteraction)
+
+      expect(mockModalInteraction.reply).toHaveBeenCalledWith({
+        content: '❌ There was an error processing your request!',
+        ephemeral: true,
+      })
+    })
   })
 
   describe('Cooldown Logic', () => {

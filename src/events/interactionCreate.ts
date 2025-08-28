@@ -1,10 +1,43 @@
 import { Events, Interaction, Collection } from 'discord.js'
 import { Event, ExtendedClient } from '@/bot/types.js'
 import logger from '@/config/logger.js'
+import { handleRegenerateButton, handleRegenerateModal } from '@/utils/regenerateImage.js'
 
 const interactionCreate: Event = {
   name: Events.InteractionCreate,
   async execute(interaction: Interaction) {
+    // Handle button interactions
+    if (interaction.isButton()) {
+      if (interaction.customId.startsWith('regenerate_')) {
+        try {
+          await handleRegenerateButton(interaction)
+        } catch (error) {
+          logger.error('Error handling regenerate button:', error)
+          await interaction.reply({
+            content: '❌ There was an error processing your request!',
+            ephemeral: true,
+          })
+        }
+      }
+      return
+    }
+
+    // Handle modal submissions
+    if (interaction.isModalSubmit()) {
+      if (interaction.customId.startsWith('regenerate_modal_')) {
+        try {
+          await handleRegenerateModal(interaction)
+        } catch (error) {
+          logger.error('Error handling regenerate modal:', error)
+          await interaction.reply({
+            content: '❌ There was an error processing your request!',
+            ephemeral: true,
+          })
+        }
+      }
+      return
+    }
+
     if (!interaction.isChatInputCommand()) return
 
     const client = interaction.client as ExtendedClient
