@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai'
+import { GoogleGenAI, HarmCategory, type SafetySetting } from '@google/genai'
 import { config } from '@/config/environment.js'
 import logger from '@/config/logger.js'
 import { Buffer } from 'node:buffer'
@@ -29,6 +29,41 @@ export class GeminiService {
     }
   }
 
+  private buildSafetySettings(): SafetySetting[] {
+    const safetySettings: SafetySetting[] = []
+
+    const safetyMappings = [
+      { category: HarmCategory.HARM_CATEGORY_HARASSMENT, envVar: config.GEMINI_SAFETY_HARASSMENT },
+      {
+        category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+        envVar: config.GEMINI_SAFETY_HATE_SPEECH,
+      },
+      {
+        category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+        envVar: config.GEMINI_SAFETY_SEXUALLY_EXPLICIT,
+      },
+      {
+        category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+        envVar: config.GEMINI_SAFETY_DANGEROUS_CONTENT,
+      },
+      {
+        category: HarmCategory.HARM_CATEGORY_CIVIC_INTEGRITY,
+        envVar: config.GEMINI_SAFETY_CIVIC_INTEGRITY,
+      },
+    ]
+
+    for (const mapping of safetyMappings) {
+      if (mapping.envVar) {
+        safetySettings.push({
+          category: mapping.category,
+          threshold: mapping.envVar as any,
+        })
+      }
+    }
+
+    return safetySettings
+  }
+
   public isAvailable(): boolean {
     return this.client !== null
   }
@@ -41,9 +76,13 @@ export class GeminiService {
     try {
       logger.info(`Generating image for prompt: "${prompt.substring(0, 50)}..."`)
 
+      const safetySettings = this.buildSafetySettings()
+      const config = safetySettings.length > 0 ? { safetySettings } : undefined
+
       const response = await this.client.models.generateContent({
         model: 'gemini-2.5-flash-image-preview',
         contents: [prompt],
+        ...(config && { config }),
       })
 
       // Extract image data from response parts
@@ -113,9 +152,13 @@ export class GeminiService {
         },
       }
 
+      const safetySettings = this.buildSafetySettings()
+      const config = safetySettings.length > 0 ? { safetySettings } : undefined
+
       const response = await this.client.models.generateContent({
         model: 'gemini-2.5-flash-image-preview',
         contents: [imagePart, prompt],
+        ...(config && { config }),
       })
 
       // Extract image data from response parts

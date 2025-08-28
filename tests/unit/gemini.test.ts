@@ -6,6 +6,11 @@ const mockGenerateContent = jest.fn() as jest.MockedFunction<any>
 // Mock the config to be controllable in tests
 const mockConfig = {
   GOOGLE_API_KEY: undefined as string | undefined,
+  GEMINI_SAFETY_HARASSMENT: undefined as string | undefined,
+  GEMINI_SAFETY_HATE_SPEECH: undefined as string | undefined,
+  GEMINI_SAFETY_SEXUALLY_EXPLICIT: undefined as string | undefined,
+  GEMINI_SAFETY_DANGEROUS_CONTENT: undefined as string | undefined,
+  GEMINI_SAFETY_CIVIC_INTEGRITY: undefined as string | undefined,
 }
 
 jest.mock('@google/genai', () => ({
@@ -14,6 +19,19 @@ jest.mock('@google/genai', () => ({
       generateContent: mockGenerateContent,
     },
   })),
+  HarmCategory: {
+    HARM_CATEGORY_HARASSMENT: 'HARM_CATEGORY_HARASSMENT',
+    HARM_CATEGORY_HATE_SPEECH: 'HARM_CATEGORY_HATE_SPEECH',
+    HARM_CATEGORY_SEXUALLY_EXPLICIT: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+    HARM_CATEGORY_DANGEROUS_CONTENT: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+    HARM_CATEGORY_CIVIC_INTEGRITY: 'HARM_CATEGORY_CIVIC_INTEGRITY',
+  },
+  HarmBlockThreshold: {
+    BLOCK_NONE: 'BLOCK_NONE',
+    BLOCK_ONLY_HIGH: 'BLOCK_ONLY_HIGH',
+    BLOCK_MEDIUM_AND_ABOVE: 'BLOCK_MEDIUM_AND_ABOVE',
+    BLOCK_LOW_AND_ABOVE: 'BLOCK_LOW_AND_ABOVE',
+  },
 }))
 
 jest.mock('@/config/environment.js', () => ({

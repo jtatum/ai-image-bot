@@ -6,6 +6,14 @@ if (process.env.NODE_ENV !== 'test' && !process.env.JEST_WORKER_ID) {
   dotenv.config()
 }
 
+const harmBlockThresholdEnum = z.enum([
+  'OFF',
+  'BLOCK_NONE',
+  'BLOCK_ONLY_HIGH',
+  'BLOCK_MEDIUM_AND_ABOVE',
+  'BLOCK_LOW_AND_ABOVE',
+])
+
 const environmentSchema = z.object({
   DISCORD_TOKEN: z.string().min(1, 'Discord token is required'),
   CLIENT_ID: z.string().min(1, 'Discord client ID is required'),
@@ -20,6 +28,11 @@ const environmentSchema = z.object({
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
   COMMAND_COOLDOWN_SECONDS: z.coerce.number().default(30),
   BOT_ACTIVITIES: z.string().optional(),
+  GEMINI_SAFETY_HARASSMENT: harmBlockThresholdEnum.optional(),
+  GEMINI_SAFETY_HATE_SPEECH: harmBlockThresholdEnum.optional(),
+  GEMINI_SAFETY_SEXUALLY_EXPLICIT: harmBlockThresholdEnum.optional(),
+  GEMINI_SAFETY_DANGEROUS_CONTENT: harmBlockThresholdEnum.optional(),
+  GEMINI_SAFETY_CIVIC_INTEGRITY: harmBlockThresholdEnum.optional(),
 })
 
 export type Environment = z.infer<typeof environmentSchema>
