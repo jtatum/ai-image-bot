@@ -66,7 +66,7 @@ const gemini: Command = {
       // Create refresh button
       const refreshButton = new ButtonBuilder()
         .setCustomId(`regenerate_${interaction.user.id}_${Date.now()}`)
-        .setLabel('🔄 Regenerate')
+        .setLabel('🔄')
         .setStyle(ButtonStyle.Secondary)
 
       const row = new ActionRowBuilder<ButtonBuilder>().addComponents(refreshButton)
