@@ -5,8 +5,8 @@ import { config } from '@/config/environment.js'
 import logger from '@/config/logger.js'
 import {
   checkGeminiAvailability,
-  handleGeminiError,
-  handleGeminiResultError,
+  handleGeminiErrorWithButton,
+  handleGeminiResultErrorWithButton,
   safeReply,
 } from '@/utils/interactionHelpers.js'
 import { buildImageSuccessResponse } from '@/utils/imageHelpers.js'
@@ -45,11 +45,12 @@ const gemini: Command = {
       const result = await geminiService.generateImage(prompt)
 
       if (!result.success) {
-        await handleGeminiResultError(
+        await handleGeminiResultErrorWithButton(
           interaction,
           result.error || 'Failed to generate image',
           'Prompt',
-          prompt
+          prompt,
+          interaction.user.id
         )
         return
       }
@@ -68,7 +69,13 @@ const gemini: Command = {
       logger.info(`✅ Image generated and sent for prompt: "${prompt.substring(0, 50)}..."`)
     } catch (error) {
       logger.error('Error in gemini command:', error)
-      await handleGeminiError(interaction, error, 'Failed to generate image')
+      await handleGeminiErrorWithButton(
+        interaction,
+        error,
+        'Failed to generate image',
+        prompt,
+        interaction.user.id
+      )
     }
   },
 }

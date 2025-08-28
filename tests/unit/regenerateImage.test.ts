@@ -17,15 +17,15 @@ const mockGeminiService = geminiService as any
 // Mock the helper utilities
 jest.mock('@/utils/interactionHelpers.js', () => ({
   checkGeminiAvailability: jest.fn() as jest.MockedFunction<any>,
-  handleGeminiResultError: jest.fn() as jest.MockedFunction<any>,
-  handleGeminiError: jest.fn() as jest.MockedFunction<any>,
+  handleGeminiResultErrorWithButton: jest.fn() as jest.MockedFunction<any>,
+  handleGeminiErrorWithButton: jest.fn() as jest.MockedFunction<any>,
   safeReply: jest.fn() as jest.MockedFunction<any>,
 }))
 
-import { checkGeminiAvailability, handleGeminiResultError, handleGeminiError, safeReply } from '@/utils/interactionHelpers.js'
+import { checkGeminiAvailability, handleGeminiResultErrorWithButton, handleGeminiErrorWithButton, safeReply } from '@/utils/interactionHelpers.js'
 const mockCheckGeminiAvailability = checkGeminiAvailability as jest.MockedFunction<any>
-const mockHandleGeminiResultError = handleGeminiResultError as jest.MockedFunction<any>
-const mockHandleGeminiError = handleGeminiError as jest.MockedFunction<any>
+const mockHandleGeminiResultErrorWithButton = handleGeminiResultErrorWithButton as jest.MockedFunction<any>
+const mockHandleGeminiErrorWithButton = handleGeminiErrorWithButton as jest.MockedFunction<any>
 const mockSafeReply = safeReply as jest.MockedFunction<any>
 
 jest.mock('@/utils/imageHelpers.js', () => ({
@@ -49,8 +49,8 @@ describe('Regenerate Image Utils', () => {
     // Setup default successful flow
     mockCheckGeminiAvailability.mockResolvedValue(true)
     mockSafeReply.mockResolvedValue(undefined)
-    mockHandleGeminiResultError.mockResolvedValue(undefined)
-    mockHandleGeminiError.mockResolvedValue(undefined)
+    mockHandleGeminiResultErrorWithButton.mockResolvedValue(undefined)
+    mockHandleGeminiErrorWithButton.mockResolvedValue(undefined)
     mockGeminiService.generateImage.mockResolvedValue({
       success: true,
       buffer: Buffer.from('fake-image-data'),
@@ -191,11 +191,12 @@ describe('Regenerate Image Utils', () => {
 
       await handleRegenerateModal(mockModalInteraction)
 
-      expect(mockHandleGeminiResultError).toHaveBeenCalledWith(
+      expect(mockHandleGeminiResultErrorWithButton).toHaveBeenCalledWith(
         mockModalInteraction,
         'Content blocked: SAFETY',
         'Prompt',
-        'a futuristic robot playing chess'
+        'a futuristic robot playing chess',
+        'user123'
       )
       expect(mockSafeReply).not.toHaveBeenCalled()
     })
@@ -207,11 +208,12 @@ describe('Regenerate Image Utils', () => {
 
       await handleRegenerateModal(mockModalInteraction)
 
-      expect(mockHandleGeminiResultError).toHaveBeenCalledWith(
+      expect(mockHandleGeminiResultErrorWithButton).toHaveBeenCalledWith(
         mockModalInteraction,
         'Failed to generate image',
         'Prompt',
-        'a futuristic robot playing chess'
+        'a futuristic robot playing chess',
+        'user123'
       )
     })
 
@@ -221,10 +223,12 @@ describe('Regenerate Image Utils', () => {
 
       await handleRegenerateModal(mockModalInteraction)
 
-      expect(mockHandleGeminiError).toHaveBeenCalledWith(
+      expect(mockHandleGeminiErrorWithButton).toHaveBeenCalledWith(
         mockModalInteraction,
         apiError,
-        'Failed to regenerate image'
+        'Failed to regenerate image',
+        'a futuristic robot playing chess',
+        'user123'
       )
     })
 
@@ -234,10 +238,12 @@ describe('Regenerate Image Utils', () => {
 
       await handleRegenerateModal(mockModalInteraction)
 
-      expect(mockHandleGeminiError).toHaveBeenCalledWith(
+      expect(mockHandleGeminiErrorWithButton).toHaveBeenCalledWith(
         mockModalInteraction,
         unknownError,
-        'Failed to regenerate image'
+        'Failed to regenerate image',
+        'a futuristic robot playing chess',
+        'user123'
       )
     })
 

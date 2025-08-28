@@ -1,5 +1,6 @@
 import { ChatInputCommandInteraction, ButtonInteraction, ModalSubmitInteraction } from 'discord.js'
 import { geminiService } from '@/services/gemini.js'
+import { buildImageErrorResponse } from '@/utils/imageHelpers.js'
 
 type AnyInteraction = ChatInputCommandInteraction | ButtonInteraction | ModalSubmitInteraction
 
@@ -74,4 +75,33 @@ export async function handleGeminiError(
     content,
     ephemeral: false,
   })
+}
+
+/**
+ * Handles Gemini result errors with regenerate button (when result.success is false)
+ */
+export async function handleGeminiResultErrorWithButton(
+  interaction: AnyInteraction,
+  errorMessage: string,
+  context: string,
+  userPrompt: string,
+  userId: string
+): Promise<void> {
+  const response = buildImageErrorResponse(errorMessage, context, userPrompt, userId)
+  await safeReply(interaction, response)
+}
+
+/**
+ * Handles Gemini service errors with regenerate button
+ */
+export async function handleGeminiErrorWithButton(
+  interaction: AnyInteraction,
+  error: unknown,
+  context: string,
+  userPrompt: string,
+  userId: string
+): Promise<void> {
+  const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+  const response = buildImageErrorResponse(errorMessage, context, userPrompt, userId)
+  await safeReply(interaction, response)
 }

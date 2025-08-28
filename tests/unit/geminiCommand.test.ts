@@ -23,15 +23,15 @@ jest.mock('@/config/environment.js', () => ({
 // Mock the helper utilities - we'll spy on these to test integration
 jest.mock('@/utils/interactionHelpers.js', () => ({
   checkGeminiAvailability: jest.fn() as jest.MockedFunction<any>,
-  handleGeminiResultError: jest.fn() as jest.MockedFunction<any>,
-  handleGeminiError: jest.fn() as jest.MockedFunction<any>,
+  handleGeminiResultErrorWithButton: jest.fn() as jest.MockedFunction<any>,
+  handleGeminiErrorWithButton: jest.fn() as jest.MockedFunction<any>,
   safeReply: jest.fn() as jest.MockedFunction<any>,
 }))
 
-import { checkGeminiAvailability, handleGeminiResultError, handleGeminiError, safeReply } from '@/utils/interactionHelpers.js'
+import { checkGeminiAvailability, handleGeminiResultErrorWithButton, handleGeminiErrorWithButton, safeReply } from '@/utils/interactionHelpers.js'
 const mockCheckGeminiAvailability = checkGeminiAvailability as jest.MockedFunction<any>
-const mockHandleGeminiResultError = handleGeminiResultError as jest.MockedFunction<any>
-const mockHandleGeminiError = handleGeminiError as jest.MockedFunction<any>
+const mockHandleGeminiResultErrorWithButton = handleGeminiResultErrorWithButton as jest.MockedFunction<any>
+const mockHandleGeminiErrorWithButton = handleGeminiErrorWithButton as jest.MockedFunction<any>
 const mockSafeReply = safeReply as jest.MockedFunction<any>
 
 jest.mock('@/utils/imageHelpers.js', () => ({
@@ -52,8 +52,8 @@ describe('Gemini Command', () => {
     // Setup default successful flow
     mockCheckGeminiAvailability.mockResolvedValue(true)
     mockSafeReply.mockResolvedValue(undefined)
-    mockHandleGeminiResultError.mockResolvedValue(undefined)
-    mockHandleGeminiError.mockResolvedValue(undefined)
+    mockHandleGeminiResultErrorWithButton.mockResolvedValue(undefined)
+    mockHandleGeminiErrorWithButton.mockResolvedValue(undefined)
     mockBuildImageSuccessResponse.mockReturnValue({
       content: '🎨 **Image generated successfully!**\n**Prompt:** test prompt',
       files: [{}],
@@ -224,11 +224,12 @@ describe('Gemini Command', () => {
 
       await geminiCommand.execute(mockInteraction)
 
-      expect(mockHandleGeminiResultError).toHaveBeenCalledWith(
+      expect(mockHandleGeminiResultErrorWithButton).toHaveBeenCalledWith(
         mockInteraction,
         'Content blocked: SAFETY',
         'Prompt',
-        'test prompt'
+        'test prompt',
+        'user123'
       )
       expect(mockSafeReply).not.toHaveBeenCalled()
     })
@@ -240,11 +241,12 @@ describe('Gemini Command', () => {
 
       await geminiCommand.execute(mockInteraction)
 
-      expect(mockHandleGeminiResultError).toHaveBeenCalledWith(
+      expect(mockHandleGeminiResultErrorWithButton).toHaveBeenCalledWith(
         mockInteraction,
         'Failed to generate image',
         'Prompt',
-        'test prompt'
+        'test prompt',
+        'user123'
       )
     })
 
@@ -254,10 +256,12 @@ describe('Gemini Command', () => {
 
       await geminiCommand.execute(mockInteraction)
 
-      expect(mockHandleGeminiError).toHaveBeenCalledWith(
+      expect(mockHandleGeminiErrorWithButton).toHaveBeenCalledWith(
         mockInteraction,
         apiError,
-        'Failed to generate image'
+        'Failed to generate image',
+        'test prompt',
+        'user123'
       )
     })
 
@@ -267,10 +271,12 @@ describe('Gemini Command', () => {
 
       await geminiCommand.execute(mockInteraction)
 
-      expect(mockHandleGeminiError).toHaveBeenCalledWith(
+      expect(mockHandleGeminiErrorWithButton).toHaveBeenCalledWith(
         mockInteraction,
         unknownError,
-        'Failed to generate image'
+        'Failed to generate image',
+        'test prompt',
+        'user123'
       )
     })
   })

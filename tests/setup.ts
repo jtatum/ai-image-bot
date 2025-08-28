@@ -77,14 +77,49 @@ jest.mock('discord.js', () => ({
     setTimestamp: jest.fn().mockReturnThis(),
     setFooter: jest.fn().mockReturnThis()
   })),
-  ActionRowBuilder: jest.fn().mockImplementation(() => ({
-    addComponents: jest.fn().mockReturnThis()
-  })),
-  ButtonBuilder: jest.fn().mockImplementation(() => ({
-    setCustomId: jest.fn().mockReturnThis(),
-    setLabel: jest.fn().mockReturnThis(),
-    setStyle: jest.fn().mockReturnThis()
-  })),
+  ActionRowBuilder: jest.fn().mockImplementation(() => {
+    const actionRow = {
+      components: [],
+      addComponents: jest.fn().mockImplementation((...components) => {
+        actionRow.components.push(...components)
+        return actionRow
+      }),
+      toJSON: jest.fn().mockReturnValue({ type: 1, components: [] })
+    }
+    return actionRow
+  }),
+  ButtonBuilder: jest.fn().mockImplementation(() => {
+    let customId = ''
+    let label = ''
+    let style = 2
+    
+    const button = {
+      setCustomId: jest.fn().mockImplementation((id) => {
+        customId = id
+        return button
+      }),
+      setLabel: jest.fn().mockImplementation((lbl) => {
+        label = lbl
+        return button
+      }),
+      setStyle: jest.fn().mockImplementation((st) => {
+        style = st
+        return button
+      }),
+      toJSON: jest.fn().mockImplementation(() => ({
+        type: 2,
+        custom_id: customId,
+        label: label,
+        style: style
+      })),
+      data: {
+        get custom_id() { return customId },
+        get label() { return label },
+        get style() { return style }
+      }
+    }
+    return button
+  }),
   ButtonStyle: {
     Primary: 1,
     Secondary: 2,

@@ -3,8 +3,8 @@ import { geminiService } from '@/services/gemini.js'
 import logger from '@/config/logger.js'
 import {
   checkGeminiAvailability,
-  handleGeminiError,
-  handleGeminiResultError,
+  handleGeminiErrorWithButton,
+  handleGeminiResultErrorWithButton,
   safeReply,
 } from '@/utils/interactionHelpers.js'
 import { buildImageSuccessResponse } from '@/utils/imageHelpers.js'
@@ -41,11 +41,12 @@ export async function handleRegenerateModal(interaction: any): Promise<void> {
     const result = await geminiService.generateImage(prompt)
 
     if (!result.success) {
-      await handleGeminiResultError(
+      await handleGeminiResultErrorWithButton(
         interaction,
         result.error || 'Failed to generate image',
         'Prompt',
-        prompt
+        prompt,
+        interaction.user.id
       )
       return
     }
@@ -64,6 +65,12 @@ export async function handleRegenerateModal(interaction: any): Promise<void> {
     logger.info(`✅ Image regenerated and sent for prompt: "${prompt.substring(0, 50)}..."`)
   } catch (error) {
     logger.error('Error in regenerate modal:', error)
-    await handleGeminiError(interaction, error, 'Failed to regenerate image')
+    await handleGeminiErrorWithButton(
+      interaction,
+      error,
+      'Failed to regenerate image',
+      prompt,
+      interaction.user.id
+    )
   }
 }

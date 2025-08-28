@@ -18,3 +18,17 @@ export function createImageActionButtons(userId: string): ActionRowBuilder<Butto
 
   return new ActionRowBuilder<ButtonBuilder>().addComponents(editButton, regenerateButton)
 }
+
+/**
+ * Creates regenerate-only button for error cases when there's no image to edit
+ */
+export function createRegenerateOnlyButton(userId: string): ActionRowBuilder<ButtonBuilder> {
+  const timestamp = Date.now()
+
+  const regenerateButton = new ButtonBuilder()
+    .setCustomId(`regenerate_${userId}_${timestamp}`)
+    .setLabel('🔄')
+    .setStyle(ButtonStyle.Secondary)
+
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(regenerateButton)
+}

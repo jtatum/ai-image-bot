@@ -1,6 +1,6 @@
 import { AttachmentBuilder } from 'discord.js'
 import { createImageFilename } from '@/utils/filename.js'
-import { createImageActionButtons } from '@/utils/buttons.js'
+import { createImageActionButtons, createRegenerateOnlyButton } from '@/utils/buttons.js'
 import { GenerateImageResult } from '@/services/gemini.js'
 
 /**
@@ -65,6 +65,30 @@ export function buildImageSuccessResponse(
   return {
     content: `${typeEmojis[type]} **Image ${typeLabels[type]} successfully!**\n**${contextLabel}:** ${prompt}`,
     files: [attachment],
+    components: [buttons],
+  }
+}
+
+/**
+ * Builds an error response for image operations with regenerate button
+ */
+export interface ImageErrorResponse {
+  content: string
+  ephemeral: boolean
+  components: any[]
+}
+
+export function buildImageErrorResponse(
+  errorMessage: string,
+  contextLabel: string,
+  prompt: string,
+  userId: string
+): ImageErrorResponse {
+  const buttons = createRegenerateOnlyButton(userId)
+
+  return {
+    content: `❌ ${errorMessage}\n**${contextLabel}:** ${prompt}`,
+    ephemeral: false,
     components: [buttons],
   }
 }
