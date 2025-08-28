@@ -36,7 +36,7 @@ describe('Image helpers', () => {
       const response = buildImageErrorResponse(errorMessage, contextLabel, prompt, userId)
 
       expect(response).toEqual({
-        content: '❌ Failed to generate image\n**Prompt:** a cute robot',
+        content: '<@user123> ❌ Failed to generate image\n**Prompt:** a cute robot',
         ephemeral: false,
         components: [expect.any(Object)]
       })
@@ -52,7 +52,7 @@ describe('Image helpers', () => {
 
       const response = buildImageErrorResponse(errorMessage, contextLabel, prompt, userId)
 
-      expect(response.content).toBe('❌ Safety filter triggered\n**Edit Request:** add sunset background')
+      expect(response.content).toBe('<@user456> ❌ Safety filter triggered\n**Edit Request:** add sunset background')
       expect(mockCreateRegenerateOnlyButton).toHaveBeenCalledWith(userId)
     })
 
@@ -78,7 +78,7 @@ describe('Image helpers', () => {
 
       const response = buildImageErrorResponse(errorMessage, contextLabel, prompt, userId)
 
-      expect(response.content).toBe('❌ \n**Prompt:** test prompt')
+      expect(response.content).toBe('<@user123> ❌ \n**Prompt:** test prompt')
       expect(mockCreateRegenerateOnlyButton).toHaveBeenCalledWith(userId)
     })
   })

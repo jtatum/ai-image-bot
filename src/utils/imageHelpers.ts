@@ -63,7 +63,7 @@ export function buildImageSuccessResponse(
   }
 
   return {
-    content: `${typeEmojis[type]} **Image ${typeLabels[type]} successfully!**\n**${contextLabel}:** ${prompt}`,
+    content: `<@${userId}> ${typeEmojis[type]} **Image ${typeLabels[type]} successfully!**\n**${contextLabel}:** ${prompt}`,
     files: [attachment],
     components: [buttons],
   }
@@ -87,7 +87,7 @@ export function buildImageErrorResponse(
   const buttons = createRegenerateOnlyButton(userId)
 
   return {
-    content: `❌ ${errorMessage}\n**${contextLabel}:** ${prompt}`,
+    content: `<@${userId}> ❌ ${errorMessage}\n**${contextLabel}:** ${prompt}`,
     ephemeral: false,
     components: [buttons],
   }

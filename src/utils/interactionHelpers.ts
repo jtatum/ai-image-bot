@@ -49,7 +49,7 @@ export async function handleGeminiResultError(
   context: string,
   userPrompt: string
 ): Promise<void> {
-  const content = `❌ ${errorMessage}\n**${context}:** ${userPrompt}`
+  const content = `<@${interaction.user.id}> ❌ ${errorMessage}\n**${context}:** ${userPrompt}`
 
   await safeReply(interaction, {
     content,
@@ -68,8 +68,8 @@ export async function handleGeminiError(
 ): Promise<void> {
   const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
   const content = userPrompt
-    ? `❌ ${errorMessage}\n**${context}:** ${userPrompt}`
-    : `❌ ${errorMessage}`
+    ? `<@${interaction.user.id}> ❌ ${errorMessage}\n**${context}:** ${userPrompt}`
+    : `<@${interaction.user.id}> ❌ ${errorMessage}`
 
   await safeReply(interaction, {
     content,
