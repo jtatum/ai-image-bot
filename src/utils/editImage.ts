@@ -94,12 +94,12 @@ export async function handleEditModal(interaction: ModalSubmitInteraction): Prom
     // Create both edit and regenerate buttons for the edited image
     const editButton = new ButtonBuilder()
       .setCustomId(`edit_${interaction.user.id}_${Date.now()}`)
-      .setLabel('✏️ Edit')
-      .setStyle(ButtonStyle.Primary)
+      .setLabel('✏️')
+      .setStyle(ButtonStyle.Secondary)
 
     const regenerateButton = new ButtonBuilder()
       .setCustomId(`regenerate_${interaction.user.id}_${Date.now()}`)
-      .setLabel('🔄 Regenerate')
+      .setLabel('🔄')
       .setStyle(ButtonStyle.Secondary)
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(editButton, regenerateButton)
