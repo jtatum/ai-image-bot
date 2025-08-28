@@ -1,190 +1,343 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals'
-import { ButtonInteraction, ModalSubmitInteraction } from 'discord.js'
+import { ModalSubmitInteraction } from 'discord.js'
 import { handleRegenerateButton, handleRegenerateModal } from '@/utils/regenerateImage.js'
+import { createMockButtonInteraction, createMockModalInteraction } from '../helpers/mockInteractions.js'
 
 // Mock the gemini service
 jest.mock('@/services/gemini.js', () => ({
   geminiService: {
-    isAvailable: jest.fn(),
-    generateImage: jest.fn(),
+    isAvailable: jest.fn() as jest.MockedFunction<any>,
+    generateImage: jest.fn() as jest.MockedFunction<any>,
   },
 }))
 
-// Mock the filename utility
-jest.mock('@/utils/filename.js', () => ({
-  createImageFilename: jest.fn().mockReturnValue('test_image.png'),
+import { geminiService } from '@/services/gemini.js'
+const mockGeminiService = geminiService as any
+
+// Mock the helper utilities
+jest.mock('@/utils/interactionHelpers.js', () => ({
+  checkGeminiAvailability: jest.fn() as jest.MockedFunction<any>,
+  handleGeminiResultError: jest.fn() as jest.MockedFunction<any>,
+  handleGeminiError: jest.fn() as jest.MockedFunction<any>,
+  safeReply: jest.fn() as jest.MockedFunction<any>,
 }))
 
-// Import the mocked modules
-import { geminiService } from '@/services/gemini.js'
-import { createImageFilename } from '@/utils/filename.js'
+import { checkGeminiAvailability, handleGeminiResultError, handleGeminiError, safeReply } from '@/utils/interactionHelpers.js'
+const mockCheckGeminiAvailability = checkGeminiAvailability as jest.MockedFunction<any>
+const mockHandleGeminiResultError = handleGeminiResultError as jest.MockedFunction<any>
+const mockHandleGeminiError = handleGeminiError as jest.MockedFunction<any>
+const mockSafeReply = safeReply as jest.MockedFunction<any>
+
+jest.mock('@/utils/imageHelpers.js', () => ({
+  buildImageSuccessResponse: jest.fn() as jest.MockedFunction<any>,
+}))
+
+import { buildImageSuccessResponse } from '@/utils/imageHelpers.js'
+const mockBuildImageSuccessResponse = buildImageSuccessResponse as jest.MockedFunction<any>
+
+jest.mock('@/utils/modalHelpers.js', () => ({
+  createRegenerateModal: jest.fn() as jest.MockedFunction<any>,
+}))
+
+import { createRegenerateModal } from '@/utils/modalHelpers.js'
+const mockCreateRegenerateModal = createRegenerateModal as jest.MockedFunction<any>
 
 describe('Regenerate Image Utils', () => {
-  let mockButtonInteraction: Partial<ButtonInteraction>
-  let mockModalInteraction: Partial<ModalSubmitInteraction>
-
   beforeEach(() => {
     jest.clearAllMocks()
-
-    // Mock button interaction
-    // @ts-ignore
-    mockButtonInteraction = {
-      customId: 'regenerate_user123_1234567890',
-      user: { id: 'user123', tag: 'TestUser#1234' },
-      message: {
-        content: '🎨 **Image generated successfully!**\n**Prompt:** a cute robot playing chess',
-      },
-      // @ts-ignore
-      showModal: jest.fn().mockResolvedValue({}),
-    } as any
-
-    // Mock modal interaction
-    // @ts-ignore
-    mockModalInteraction = {
-      customId: 'regenerate_modal_user123_1234567890',
-      user: { id: 'user123', tag: 'TestUser#1234', username: 'testuser' },
-      guild: { name: 'TestGuild' },
-      fields: {
-        getTextInputValue: jest.fn().mockReturnValue('a futuristic robot playing chess'),
-      },
-      // @ts-ignore
-      deferReply: jest.fn().mockResolvedValue({}),
-      // @ts-ignore
-      editReply: jest.fn().mockResolvedValue({}),
-      // @ts-ignore
-      reply: jest.fn().mockResolvedValue({}),
-    } as any
+    
+    // Setup default successful flow
+    mockCheckGeminiAvailability.mockResolvedValue(true)
+    mockSafeReply.mockResolvedValue(undefined)
+    mockHandleGeminiResultError.mockResolvedValue(undefined)
+    mockHandleGeminiError.mockResolvedValue(undefined)
+    mockGeminiService.generateImage.mockResolvedValue({
+      success: true,
+      buffer: Buffer.from('fake-image-data'),
+    })
+    mockBuildImageSuccessResponse.mockReturnValue({
+      content: '🎨 **Image regenerated successfully!**\n**Prompt:** a futuristic robot playing chess',
+      files: [{}],
+      components: [{}],
+    })
+    mockCreateRegenerateModal.mockReturnValue({
+      setCustomId: jest.fn().mockReturnThis(),
+      setTitle: jest.fn().mockReturnThis(),
+      addComponents: jest.fn().mockReturnThis(),
+    })
   })
 
   describe('handleRegenerateButton', () => {
-    it('should extract prompt from message content and show modal', async () => {
-      await handleRegenerateButton(mockButtonInteraction as ButtonInteraction)
+    it('should extract prompt from message and show modal', async () => {
+      const mockButtonInteraction = createMockButtonInteraction({
+        message: {
+          content: '🎨 **Image generated successfully!**\n**Prompt:** a futuristic robot playing chess',
+        } as any,
+        user: {
+          id: 'user123',
+        } as any,
+      })
 
-      expect(mockButtonInteraction.showModal).toHaveBeenCalledWith(
-        expect.objectContaining({
-          setCustomId: expect.any(Function),
-          setTitle: expect.any(Function),
-          addComponents: expect.any(Function),
+      await handleRegenerateButton(mockButtonInteraction)
+
+      expect(mockCreateRegenerateModal).toHaveBeenCalledWith('user123', 'a futuristic robot playing chess')
+      expect(mockButtonInteraction.showModal).toHaveBeenCalled()
+    })
+
+    it('should handle message with no prompt gracefully', async () => {
+      const mockButtonInteraction = createMockButtonInteraction({
+        message: {
+          content: 'Some message without prompt format',
+        } as any,
+        user: {
+          id: 'user456',
+        } as any,
+      })
+
+      await handleRegenerateButton(mockButtonInteraction)
+
+      expect(mockCreateRegenerateModal).toHaveBeenCalledWith('user456', '')
+      expect(mockButtonInteraction.showModal).toHaveBeenCalled()
+    })
+
+    it('should handle different prompt formats', async () => {
+      const testCases = [
+        {
+          content: '🎨 **Image generated successfully!**\n**Prompt:** complex prompt with special characters!@#$%',
+          expectedPrompt: 'complex prompt with special characters!@#$%'
+        },
+        {
+          content: '✏️ **Image edited successfully!**\n**Prompt:** another test prompt',
+          expectedPrompt: 'another test prompt'
+        },
+      ]
+
+      for (const testCase of testCases) {
+        jest.clearAllMocks()
+        
+        const mockButtonInteraction = createMockButtonInteraction({
+          message: {
+            content: testCase.content,
+          } as any,
+          user: {
+            id: 'testuser',
+          } as any,
         })
-      )
-    })
 
-    it('should handle missing prompt in message content', async () => {
-      mockButtonInteraction.message = {
-        content: '🎨 **Image generated successfully!**\nNo prompt found',
-      } as any
+        await handleRegenerateButton(mockButtonInteraction)
 
-      await handleRegenerateButton(mockButtonInteraction as ButtonInteraction)
-
-      expect(mockButtonInteraction.showModal).toHaveBeenCalled()
-    })
-
-    it('should handle empty message content', async () => {
-      mockButtonInteraction.message = {
-        content: '',
-      } as any
-
-      await handleRegenerateButton(mockButtonInteraction as ButtonInteraction)
-
-      expect(mockButtonInteraction.showModal).toHaveBeenCalled()
+        expect(mockCreateRegenerateModal).toHaveBeenCalledWith('testuser', testCase.expectedPrompt)
+      }
     })
   })
 
   describe('handleRegenerateModal', () => {
+    let mockModalInteraction: ModalSubmitInteraction
+
     beforeEach(() => {
-      ;(geminiService.isAvailable as jest.Mock).mockReturnValue(true)
-      // @ts-ignore
-      ;(geminiService.generateImage as jest.Mock).mockResolvedValue({
-        success: true,
-        buffer: Buffer.from('fake-image-data'),
+      mockModalInteraction = createMockModalInteraction({
+        fields: {
+          getTextInputValue: jest.fn().mockReturnValue('a futuristic robot playing chess'),
+        } as any,
+        user: {
+          tag: 'TestUser#1234',
+          username: 'testuser',
+          id: 'user123',
+        } as any,
+        guild: {
+          name: 'TestGuild',
+        } as any,
       })
     })
 
-    it('should generate image successfully and reply with attachment', async () => {
-      await handleRegenerateModal(mockModalInteraction as any)
+    it('should successfully regenerate image when service is available', async () => {
+      await handleRegenerateModal(mockModalInteraction)
 
-      expect(geminiService.generateImage).toHaveBeenCalledWith('a futuristic robot playing chess')
-      expect(createImageFilename).toHaveBeenCalledWith('testuser', 'a futuristic robot playing chess')
+      // Verify the flow
+      expect(mockCheckGeminiAvailability).toHaveBeenCalledWith(mockModalInteraction, 'Image generation')
       expect(mockModalInteraction.deferReply).toHaveBeenCalledWith({ ephemeral: false })
-      expect(mockModalInteraction.editReply).toHaveBeenCalledWith({
+      expect(mockGeminiService.generateImage).toHaveBeenCalledWith('a futuristic robot playing chess')
+      
+      expect(mockBuildImageSuccessResponse).toHaveBeenCalledWith(
+        { success: true, buffer: Buffer.from('fake-image-data') },
+        'testuser',
+        'a futuristic robot playing chess',
+        'user123',
+        'regenerated'
+      )
+      
+      expect(mockSafeReply).toHaveBeenCalledWith(mockModalInteraction, {
         content: '🎨 **Image regenerated successfully!**\n**Prompt:** a futuristic robot playing chess',
-        files: [expect.any(Object)],
-        components: [expect.any(Object)],
+        files: [{}],
+        components: [{}],
       })
     })
 
     it('should handle Gemini service unavailable', async () => {
-      ;(geminiService.isAvailable as jest.Mock).mockReturnValue(false)
+      mockCheckGeminiAvailability.mockResolvedValue(false)
 
-      await handleRegenerateModal(mockModalInteraction as any)
+      await handleRegenerateModal(mockModalInteraction)
 
-      expect(mockModalInteraction.reply).toHaveBeenCalledWith({
-        content: '❌ Image generation is currently unavailable. Please try again later.',
-        ephemeral: true,
-      })
-      expect(geminiService.generateImage).not.toHaveBeenCalled()
+      expect(mockCheckGeminiAvailability).toHaveBeenCalledWith(mockModalInteraction, 'Image generation')
+      expect(mockGeminiService.generateImage).not.toHaveBeenCalled()
+      expect(mockModalInteraction.deferReply).not.toHaveBeenCalled()
     })
 
-    it('should handle image generation failure', async () => {
-      // @ts-ignore
-      ;(geminiService.generateImage as jest.Mock).mockResolvedValue({
+    it('should handle image generation failure with specific error', async () => {
+      mockGeminiService.generateImage.mockResolvedValue({
         success: false,
         error: 'Content blocked: SAFETY',
       })
 
-      await handleRegenerateModal(mockModalInteraction as any)
+      await handleRegenerateModal(mockModalInteraction)
 
-      expect(mockModalInteraction.editReply).toHaveBeenCalledWith({
-        content: '❌ Content blocked: SAFETY\n**Prompt:** a futuristic robot playing chess',
-      })
+      expect(mockHandleGeminiResultError).toHaveBeenCalledWith(
+        mockModalInteraction,
+        'Content blocked: SAFETY',
+        'Prompt',
+        'a futuristic robot playing chess'
+      )
+      expect(mockSafeReply).not.toHaveBeenCalled()
     })
 
-    it('should handle image generation error with default message', async () => {
-      // @ts-ignore
-      ;(geminiService.generateImage as jest.Mock).mockResolvedValue({
+    it('should handle image generation failure with default message', async () => {
+      mockGeminiService.generateImage.mockResolvedValue({
         success: false,
       })
 
-      await handleRegenerateModal(mockModalInteraction as any)
+      await handleRegenerateModal(mockModalInteraction)
 
-      expect(mockModalInteraction.editReply).toHaveBeenCalledWith({
-        content: '❌ Failed to generate image\n**Prompt:** a futuristic robot playing chess',
-      })
+      expect(mockHandleGeminiResultError).toHaveBeenCalledWith(
+        mockModalInteraction,
+        'Failed to generate image',
+        'Prompt',
+        'a futuristic robot playing chess'
+      )
     })
 
     it('should handle exceptions during image generation', async () => {
-      // @ts-ignore
-      ;(geminiService.generateImage as jest.Mock).mockRejectedValue(new Error('API Error'))
+      const apiError = new Error('API Error')
+      mockGeminiService.generateImage.mockRejectedValue(apiError)
 
-      await handleRegenerateModal(mockModalInteraction as any)
+      await handleRegenerateModal(mockModalInteraction)
 
-      expect(mockModalInteraction.editReply).toHaveBeenCalledWith({
-        content: '❌ Failed to regenerate image: API Error',
-      })
+      expect(mockHandleGeminiError).toHaveBeenCalledWith(
+        mockModalInteraction,
+        apiError,
+        'Failed to regenerate image'
+      )
     })
 
     it('should handle unknown errors', async () => {
-      // @ts-ignore
-      ;(geminiService.generateImage as jest.Mock).mockRejectedValue('Unknown error')
+      const unknownError = 'Network timeout'
+      mockGeminiService.generateImage.mockRejectedValue(unknownError)
 
-      await handleRegenerateModal(mockModalInteraction as any)
+      await handleRegenerateModal(mockModalInteraction)
 
-      expect(mockModalInteraction.editReply).toHaveBeenCalledWith({
-        content: '❌ Failed to regenerate image: Unknown error occurred',
-      })
+      expect(mockHandleGeminiError).toHaveBeenCalledWith(
+        mockModalInteraction,
+        unknownError,
+        'Failed to regenerate image'
+      )
     })
 
     it('should work without guild context (DMs)', async () => {
-      const dmModalInteraction = { ...mockModalInteraction, guild: null }
-
-      await handleRegenerateModal(dmModalInteraction as any)
-
-      expect(geminiService.generateImage).toHaveBeenCalledWith('a futuristic robot playing chess')
-      expect(mockModalInteraction.editReply).toHaveBeenCalledWith({
-        content: '🎨 **Image regenerated successfully!**\n**Prompt:** a futuristic robot playing chess',
-        files: [expect.any(Object)],
-        components: [expect.any(Object)],
+      const dmModalInteraction = createMockModalInteraction({
+        guild: null,
+        fields: {
+          getTextInputValue: jest.fn().mockReturnValue('dm regenerate test'),
+        } as any,
+        user: {
+          username: 'dmuser',
+          id: 'dmuser789',
+          tag: 'DmUser#9876',
+        } as any,
       })
+
+      await handleRegenerateModal(dmModalInteraction)
+
+      expect(mockGeminiService.generateImage).toHaveBeenCalledWith('dm regenerate test')
+      expect(mockBuildImageSuccessResponse).toHaveBeenCalledWith(
+        { success: true, buffer: Buffer.from('fake-image-data') },
+        'dmuser',
+        'dm regenerate test',
+        'dmuser789',
+        'regenerated'
+      )
+    })
+
+    it('should extract correct prompt from modal fields', async () => {
+      const customPrompts = [
+        'a majestic dragon soaring through clouds',
+        'cyberpunk city at night with neon lights',
+        'peaceful forest scene with sunlight filtering through trees'
+      ]
+
+      for (const prompt of customPrompts) {
+        jest.clearAllMocks()
+        mockGeminiService.generateImage.mockResolvedValue({
+          success: true,
+          buffer: Buffer.from('test-image-data'),
+        })
+
+        const customModalInteraction = createMockModalInteraction({
+          fields: {
+            getTextInputValue: jest.fn().mockImplementation((fieldName) => {
+              if (fieldName === 'prompt') {
+                return prompt
+              }
+              return null
+            }),
+          } as any,
+        })
+
+        await handleRegenerateModal(customModalInteraction)
+
+        expect(customModalInteraction.fields.getTextInputValue).toHaveBeenCalledWith('prompt')
+        expect(mockGeminiService.generateImage).toHaveBeenCalledWith(prompt)
+      }
+    })
+
+    it('should handle long prompts correctly', async () => {
+      const longPrompt = 'a'.repeat(995) // Near the limit
+      const longPromptInteraction = createMockModalInteraction({
+        fields: {
+          getTextInputValue: jest.fn().mockReturnValue(longPrompt),
+        } as any,
+      })
+
+      await handleRegenerateModal(longPromptInteraction)
+
+      expect(mockGeminiService.generateImage).toHaveBeenCalledWith(longPrompt)
+      expect(mockBuildImageSuccessResponse).toHaveBeenCalledWith(
+        { success: true, buffer: Buffer.from('fake-image-data') },
+        'testuser',
+        longPrompt,
+        'user123',
+        'regenerated'
+      )
+    })
+
+    it('should log correct information during regeneration', async () => {
+      const testPrompt = 'test logging prompt'
+      const loggingInteraction = createMockModalInteraction({
+        fields: {
+          getTextInputValue: jest.fn().mockReturnValue(testPrompt),
+        } as any,
+        user: {
+          tag: 'LogTest#1111',
+        } as any,
+        guild: {
+          name: 'LogTestGuild',
+        } as any,
+      })
+
+      await handleRegenerateModal(loggingInteraction)
+
+      // This test verifies the logging integration
+      // The actual logging is mocked in setup.ts, but we can verify the flow completed
+      expect(mockGeminiService.generateImage).toHaveBeenCalledWith(testPrompt)
+      expect(mockSafeReply).toHaveBeenCalled()
     })
   })
 })

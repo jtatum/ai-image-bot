@@ -1,16 +1,15 @@
-import {
-  SlashCommandBuilder,
-  ChatInputCommandInteraction,
-  AttachmentBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-} from 'discord.js'
+import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js'
 import { Command } from '@/bot/types.js'
 import { geminiService } from '@/services/gemini.js'
 import { config } from '@/config/environment.js'
 import logger from '@/config/logger.js'
-import { createImageFilename } from '@/utils/filename.js'
+import {
+  checkGeminiAvailability,
+  handleGeminiError,
+  handleGeminiResultError,
+  safeReply,
+} from '@/utils/interactionHelpers.js'
+import { buildImageSuccessResponse } from '@/utils/imageHelpers.js'
 
 const gemini: Command = {
   data: new SlashCommandBuilder()
@@ -30,11 +29,7 @@ const gemini: Command = {
     const prompt = interaction.options.getString('prompt', true)
 
     // Check if Gemini service is available
-    if (!geminiService.isAvailable()) {
-      await interaction.reply({
-        content: '❌ Image generation is currently unavailable. Please try again later.',
-        ephemeral: true,
-      })
+    if (!(await checkGeminiAvailability(interaction, 'Image generation'))) {
       return
     }
 
@@ -50,48 +45,30 @@ const gemini: Command = {
       const result = await geminiService.generateImage(prompt)
 
       if (!result.success) {
-        await interaction.editReply({
-          content: `❌ ${result.error || 'Failed to generate image'}\n**Prompt:** ${prompt}`,
-        })
+        await handleGeminiResultError(
+          interaction,
+          result.error || 'Failed to generate image',
+          'Prompt',
+          prompt
+        )
         return
       }
 
-      // Create Discord attachment with user-specific filename
-      const filename = createImageFilename(interaction.user.username, prompt)
-      const attachment = new AttachmentBuilder(result.buffer!, {
-        name: filename,
-        description: `Generated image: ${prompt.substring(0, 100)}`,
-      })
+      // Build and send success response
+      const response = buildImageSuccessResponse(
+        result,
+        interaction.user.username,
+        prompt,
+        interaction.user.id,
+        'generated'
+      )
 
-      // Create edit and regenerate buttons
-      const editButton = new ButtonBuilder()
-        .setCustomId(`edit_${interaction.user.id}_${Date.now()}`)
-        .setLabel('✏️')
-        .setStyle(ButtonStyle.Secondary)
-
-      const regenerateButton = new ButtonBuilder()
-        .setCustomId(`regenerate_${interaction.user.id}_${Date.now()}`)
-        .setLabel('🔄')
-        .setStyle(ButtonStyle.Secondary)
-
-      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(editButton, regenerateButton)
-
-      // Send the generated image with edit and regenerate buttons
-      await interaction.editReply({
-        content: `🎨 **Image generated successfully!**\n**Prompt:** ${prompt}`,
-        files: [attachment],
-        components: [row],
-      })
+      await safeReply(interaction, response)
 
       logger.info(`✅ Image generated and sent for prompt: "${prompt.substring(0, 50)}..."`)
     } catch (error) {
       logger.error('Error in gemini command:', error)
-
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-
-      await interaction.editReply({
-        content: `❌ Failed to generate image: ${errorMessage}`,
-      })
+      await handleGeminiError(interaction, error, 'Failed to generate image')
     }
   },
 }

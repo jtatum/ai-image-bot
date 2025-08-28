@@ -1,6 +1,7 @@
 import { Events, Interaction, Collection } from 'discord.js'
 import { Event, ExtendedClient } from '@/bot/types.js'
 import logger from '@/config/logger.js'
+import { safeReply } from '@/utils/interactionHelpers.js'
 import { handleRegenerateButton, handleRegenerateModal } from '@/utils/regenerateImage.js'
 import { handleEditButton, handleEditModal } from '@/utils/editImage.js'
 
@@ -110,11 +111,7 @@ const interactionCreate: Event = {
         ephemeral: true,
       }
 
-      if (interaction.replied || interaction.deferred) {
-        await interaction.followUp(errorMessage)
-      } else {
-        await interaction.reply(errorMessage)
-      }
+      await safeReply(interaction, errorMessage)
     }
   },
 }

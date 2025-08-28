@@ -32,15 +32,21 @@ jest.mock('discord.js', () => ({
     this.setupErrorHandlers = jest.fn()
     return this
   }),
-  Collection: jest.fn().mockImplementation(() => ({
-    set: jest.fn(),
-    get: jest.fn(),
-    has: jest.fn(),
-    delete: jest.fn(),
-    clear: jest.fn(),
-    size: 0,
-    forEach: jest.fn()
-  })),
+  Collection: jest.fn().mockImplementation(() => {
+    const store = new Map()
+    return {
+      set: (key: any, value: any) => {
+        store.set(key, value)
+        return store
+      },
+      get: (key: any) => store.get(key),
+      has: (key: any) => store.has(key),
+      delete: (key: any) => store.delete(key),
+      clear: () => store.clear(),
+      get size() { return store.size },
+      forEach: (callback: any) => store.forEach(callback)
+    }
+  }),
   GatewayIntentBits: {
     Guilds: 1,
     GuildMessages: 2,

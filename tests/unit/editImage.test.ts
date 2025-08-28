@@ -6,6 +6,9 @@ import {
 import { handleEditButton, handleEditModal } from '@/utils/editImage.js'
 import { geminiService } from '@/services/gemini.js'
 import { createImageFilename } from '@/utils/filename.js'
+import { checkGeminiAvailability, handleGeminiResultError, handleGeminiError, safeReply } from '@/utils/interactionHelpers.js'
+import { buildImageSuccessResponse } from '@/utils/imageHelpers.js'
+import { createEditModal } from '@/utils/modalHelpers.js'
 
 // Mock dependencies
 jest.mock('@/services/gemini.js')
@@ -14,6 +17,30 @@ jest.mock('@/config/logger.js', () => ({
   info: jest.fn(),
   error: jest.fn(),
   warn: jest.fn(),
+}))
+
+// Mock the new helper utilities
+jest.mock('@/utils/interactionHelpers.js', () => ({
+  checkGeminiAvailability: jest.fn(),
+  handleGeminiResultError: jest.fn(),
+  handleGeminiError: jest.fn(),
+  safeReply: jest.fn(),
+}))
+
+jest.mock('@/utils/imageHelpers.js', () => ({
+  buildImageSuccessResponse: jest.fn().mockReturnValue({
+    content: '✏️ **Image edited successfully!**\n**Edit Request:** Add a sunset background',
+    files: [{}],
+    components: [{}],
+  }),
+}))
+
+jest.mock('@/utils/modalHelpers.js', () => ({
+  createEditModal: jest.fn().mockReturnValue({
+    setCustomId: jest.fn().mockReturnThis(),
+    setTitle: jest.fn().mockReturnThis(),
+    addComponents: jest.fn().mockReturnThis(),
+  }),
 }))
 
 // Mock fetch
@@ -27,6 +54,17 @@ describe('EditImage Utils', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+
+    // Setup mocks for the new helper functions
+    ;(checkGeminiAvailability as any).mockResolvedValue(true)
+    ;(safeReply as any).mockResolvedValue(undefined)
+    ;(handleGeminiResultError as any).mockResolvedValue(undefined)
+    ;(handleGeminiError as any).mockResolvedValue(undefined)
+    ;(buildImageSuccessResponse as jest.Mock).mockReturnValue({
+      content: '✏️ **Image edited successfully!**\n**Edit Request:** Add a sunset background',
+      files: [{}],
+      components: [{}],
+    })
 
     // Mock geminiService
     mockGeminiService = geminiService as jest.Mocked<typeof geminiService>
@@ -84,15 +122,14 @@ describe('EditImage Utils', () => {
     it('should show edit modal when button is clicked', async () => {
       await handleEditButton(mockButtonInteraction)
 
+      expect(createEditModal).toHaveBeenCalledWith('user123')
       expect(mockButtonInteraction.showModal).toHaveBeenCalledTimes(1)
-      
-      const modalArg = (mockButtonInteraction.showModal as jest.Mock).mock.calls[0][0]
-      expect(modalArg).toBeDefined()
     })
 
     it('should create modal with correct properties', async () => {
       await handleEditButton(mockButtonInteraction)
 
+      expect(createEditModal).toHaveBeenCalledWith('user123')
       expect(mockButtonInteraction.showModal).toHaveBeenCalledTimes(1)
     })
   })
@@ -109,30 +146,25 @@ describe('EditImage Utils', () => {
     })
 
     it('should return error if Gemini service is not available', async () => {
-      mockGeminiService.isAvailable.mockReturnValue(false)
+      ;(checkGeminiAvailability as jest.Mock).mockResolvedValue(false)
 
       await handleEditModal(mockModalInteraction)
 
-      expect(mockModalInteraction.reply).toHaveBeenCalledWith({
-        content: '❌ Image editing is currently unavailable. Please try again later.',
-        ephemeral: true,
-      })
+      expect(checkGeminiAvailability).toHaveBeenCalledWith(mockModalInteraction, 'Image editing')
     })
 
     it('should return error if no original image is found', async () => {
-      mockGeminiService.isAvailable.mockReturnValue(true)
       ;(mockModalInteraction.message!.attachments.first as jest.Mock).mockReturnValue(null)
 
       await handleEditModal(mockModalInteraction)
 
-      expect(mockModalInteraction.reply).toHaveBeenCalledWith({
+      expect(safeReply).toHaveBeenCalledWith(mockModalInteraction, {
         content: '❌ Could not find the original image to edit.',
         ephemeral: true,
       })
     })
 
     it('should successfully edit image and return result', async () => {
-      mockGeminiService.isAvailable.mockReturnValue(true)
       mockGeminiService.editImage.mockResolvedValue({
         success: true,
         buffer: Buffer.from('edited-image-data'),
@@ -147,17 +179,23 @@ describe('EditImage Utils', () => {
         'image/png'
       )
 
-      expect(mockModalInteraction.editReply).toHaveBeenCalledWith(
-        expect.objectContaining({
-          content: '✏️ **Image edited successfully!**\n**Edit Request:** Add a sunset background',
-          files: expect.arrayContaining([expect.any(Object)]),
-          components: expect.arrayContaining([expect.any(Object)]),
-        })
+      expect(buildImageSuccessResponse).toHaveBeenCalledWith(
+        { success: true, buffer: Buffer.from('edited-image-data') },
+        'TestUser',
+        'Add a sunset background',
+        'user123',
+        'edited',
+        'Edit Request'
       )
+
+      expect(safeReply).toHaveBeenCalledWith(mockModalInteraction, {
+        content: '✏️ **Image edited successfully!**\n**Edit Request:** Add a sunset background',
+        files: [{}],
+        components: [{}],
+      })
     })
 
     it('should handle edit failure', async () => {
-      mockGeminiService.isAvailable.mockReturnValue(true)
       mockGeminiService.editImage.mockResolvedValue({
         success: false,
         error: 'Content blocked',
@@ -165,24 +203,27 @@ describe('EditImage Utils', () => {
 
       await handleEditModal(mockModalInteraction)
 
-      expect(mockModalInteraction.editReply).toHaveBeenCalledWith({
-        content: '❌ Content blocked\n**Edit Request:** Add a sunset background',
-      })
+      expect(handleGeminiResultError).toHaveBeenCalledWith(
+        mockModalInteraction,
+        'Content blocked',
+        'Edit Request',
+        'Add a sunset background'
+      )
     })
 
     it('should handle service errors', async () => {
-      mockGeminiService.isAvailable.mockReturnValue(true)
       mockGeminiService.editImage.mockRejectedValue(new Error('API Error'))
 
       await handleEditModal(mockModalInteraction)
 
-      expect(mockModalInteraction.editReply).toHaveBeenCalledWith({
-        content: '❌ Failed to edit image: API Error',
-      })
+      expect(handleGeminiError).toHaveBeenCalledWith(
+        mockModalInteraction,
+        new Error('API Error'),
+        'Failed to edit image'
+      )
     })
 
     it('should create both edit and regenerate buttons in response', async () => {
-      mockGeminiService.isAvailable.mockReturnValue(true)
       mockGeminiService.editImage.mockResolvedValue({
         success: true,
         buffer: Buffer.from('edited-image-data'),
@@ -190,9 +231,19 @@ describe('EditImage Utils', () => {
 
       await handleEditModal(mockModalInteraction)
 
-      const editReplyCall = (mockModalInteraction.editReply as jest.Mock).mock.calls[0][0]
-      expect(editReplyCall.components).toHaveLength(1)
-      expect(editReplyCall.components[0]).toBeDefined()
+      expect(buildImageSuccessResponse).toHaveBeenCalledWith(
+        { success: true, buffer: Buffer.from('edited-image-data') },
+        'TestUser',
+        'Add a sunset background',
+        'user123',
+        'edited',
+        'Edit Request'
+      )
+      
+      // Verify components are included in the response
+      expect(safeReply).toHaveBeenCalledWith(mockModalInteraction, expect.objectContaining({
+        components: [{}]
+      }))
     })
   })
 })
