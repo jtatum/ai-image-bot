@@ -9,6 +9,12 @@ export interface GenerateImageResult {
   error?: string
 }
 
+export interface EditImageResult {
+  success: boolean
+  buffer?: Buffer
+  error?: string
+}
+
 export class GeminiService {
   private client: GoogleGenAI | null = null
 
@@ -80,6 +86,79 @@ export class GeminiService {
       return { success: false, error: errorMessage }
     } catch (error) {
       logger.error('Failed to generate image with Gemini:', error)
+      throw error
+    }
+  }
+
+  public async editImage(
+    prompt: string,
+    imageBuffer: Buffer,
+    mimeType: string = 'image/png'
+  ): Promise<EditImageResult> {
+    if (!this.client) {
+      throw new Error('Gemini service not available - API key not configured')
+    }
+
+    try {
+      logger.info(`Editing image with prompt: "${prompt.substring(0, 50)}..."`)
+
+      // Convert image buffer to base64 for the API
+      const imageBase64 = imageBuffer.toString('base64')
+
+      // Create image part for multimodal input
+      const imagePart = {
+        inlineData: {
+          data: imageBase64,
+          mimeType: mimeType,
+        },
+      }
+
+      const response = await this.client.models.generateContent({
+        model: 'gemini-2.5-flash-image-preview',
+        contents: [imagePart, prompt],
+      })
+
+      // Extract image data from response parts
+      if (response.candidates && response.candidates[0]?.content?.parts) {
+        for (const part of response.candidates[0].content.parts) {
+          if (part.inlineData && part.inlineData.data) {
+            logger.info('✅ Image edited successfully')
+            return { success: true, buffer: Buffer.from(part.inlineData.data, 'base64') }
+          }
+        }
+      }
+
+      // Check for error information
+      let errorMessage = 'Failed to edit image'
+
+      // Check promptFeedback for safety filtering
+      if (response.promptFeedback?.blockReason) {
+        errorMessage = `Content blocked: ${response.promptFeedback.blockReason}`
+      }
+
+      // Check candidates finishReason
+      if (response.candidates && response.candidates[0]?.finishReason) {
+        const finishReason = response.candidates[0].finishReason
+        if (finishReason !== 'STOP') {
+          errorMessage = `Generation stopped: ${finishReason}`
+        }
+      }
+
+      logger.warn(
+        'Edit image response:',
+        JSON.stringify(
+          {
+            ...(response.candidates && { candidates: response.candidates }),
+            ...(response.promptFeedback && { promptFeedback: response.promptFeedback }),
+          },
+          null,
+          2
+        )
+      )
+
+      return { success: false, error: errorMessage }
+    } catch (error) {
+      logger.error('Failed to edit image with Gemini:', error)
       throw error
     }
   }

@@ -63,15 +63,20 @@ const gemini: Command = {
         description: `Generated image: ${prompt.substring(0, 100)}`,
       })
 
-      // Create refresh button
-      const refreshButton = new ButtonBuilder()
+      // Create edit and regenerate buttons
+      const editButton = new ButtonBuilder()
+        .setCustomId(`edit_${interaction.user.id}_${Date.now()}`)
+        .setLabel('✏️')
+        .setStyle(ButtonStyle.Secondary)
+
+      const regenerateButton = new ButtonBuilder()
         .setCustomId(`regenerate_${interaction.user.id}_${Date.now()}`)
         .setLabel('🔄')
         .setStyle(ButtonStyle.Secondary)
 
-      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(refreshButton)
+      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(editButton, regenerateButton)
 
-      // Send the generated image with refresh button
+      // Send the generated image with edit and regenerate buttons
       await interaction.editReply({
         content: `🎨 **Image generated successfully!**\n**Prompt:** ${prompt}`,
         files: [attachment],

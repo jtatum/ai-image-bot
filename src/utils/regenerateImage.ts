@@ -75,13 +75,18 @@ export async function handleRegenerateModal(interaction: any): Promise<void> {
       description: `Generated image: ${prompt.substring(0, 100)}`,
     })
 
-    // Create refresh button for the new image
-    const refreshButton = new ButtonBuilder()
+    // Create edit and regenerate buttons for the new image
+    const editButton = new ButtonBuilder()
+      .setCustomId(`edit_${interaction.user.id}_${Date.now()}`)
+      .setLabel('✏️ Edit')
+      .setStyle(ButtonStyle.Primary)
+
+    const regenerateButton = new ButtonBuilder()
       .setCustomId(`regenerate_${interaction.user.id}_${Date.now()}`)
       .setLabel('🔄 Regenerate')
       .setStyle(ButtonStyle.Secondary)
 
-    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(refreshButton)
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(editButton, regenerateButton)
 
     // Send the regenerated image
     await interaction.editReply({

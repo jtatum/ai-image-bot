@@ -2,6 +2,7 @@ import { Events, Interaction, Collection } from 'discord.js'
 import { Event, ExtendedClient } from '@/bot/types.js'
 import logger from '@/config/logger.js'
 import { handleRegenerateButton, handleRegenerateModal } from '@/utils/regenerateImage.js'
+import { handleEditButton, handleEditModal } from '@/utils/editImage.js'
 
 const interactionCreate: Event = {
   name: Events.InteractionCreate,
@@ -18,6 +19,16 @@ const interactionCreate: Event = {
             ephemeral: true,
           })
         }
+      } else if (interaction.customId.startsWith('edit_')) {
+        try {
+          await handleEditButton(interaction)
+        } catch (error) {
+          logger.error('Error handling edit button:', error)
+          await interaction.reply({
+            content: '❌ There was an error processing your request!',
+            ephemeral: true,
+          })
+        }
       }
       return
     }
@@ -29,6 +40,16 @@ const interactionCreate: Event = {
           await handleRegenerateModal(interaction)
         } catch (error) {
           logger.error('Error handling regenerate modal:', error)
+          await interaction.reply({
+            content: '❌ There was an error processing your request!',
+            ephemeral: true,
+          })
+        }
+      } else if (interaction.customId.startsWith('edit_modal_')) {
+        try {
+          await handleEditModal(interaction)
+        } catch (error) {
+          logger.error('Error handling edit modal:', error)
           await interaction.reply({
             content: '❌ There was an error processing your request!',
             ephemeral: true,
