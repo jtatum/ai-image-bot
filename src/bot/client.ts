@@ -15,7 +15,7 @@ export class DiscordClient extends Client implements ExtendedClient {
         status: 'online',
         activities: [
           {
-            name: 'Ready to help!',
+            name: 'Reconnected',
             type: 0,
           },
         ],

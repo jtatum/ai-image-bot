@@ -1,6 +1,7 @@
 import { Events, Client } from 'discord.js'
 import { Event } from '@/bot/types.js'
 import logger from '@/config/logger.js'
+import { config } from '@/config/environment.js'
 
 const ready: Event = {
   name: Events.ClientReady,
@@ -15,11 +16,15 @@ const ready: Event = {
     logger.info(`🏠 Connected to ${client.guilds.cache.size} guilds`)
     logger.info(`👥 Serving ${client.users.cache.size} users`)
 
-    const activities = [
+    const defaultActivities = [
       'Ready to help!',
       `Serving ${client.guilds.cache.size} servers`,
       'Type / to see commands',
     ]
+
+    const activities = config.BOT_ACTIVITIES
+      ? config.BOT_ACTIVITIES.split(',').map(activity => activity.trim())
+      : defaultActivities
 
     let activityIndex = 0
 

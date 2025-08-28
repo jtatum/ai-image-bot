@@ -19,6 +19,7 @@ const environmentSchema = z.object({
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
   COMMAND_COOLDOWN_SECONDS: z.coerce.number().default(30),
+  BOT_ACTIVITIES: z.string().optional(),
 })
 
 export type Environment = z.infer<typeof environmentSchema>
