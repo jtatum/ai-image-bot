@@ -87,16 +87,24 @@ export class GeminiService {
 
       // Extract image data from response parts
       if (response.candidates && response.candidates[0]?.content?.parts) {
+        let textResponse: string | null = null
+
+        // First, look for image data
         for (const part of response.candidates[0].content.parts) {
           if (part.inlineData && part.inlineData.data) {
             logger.info('✅ Image generated successfully')
             return { success: true, buffer: Buffer.from(part.inlineData.data, 'base64') }
           }
-          // Handle text responses (e.g., content filtering explanations)
+          // Store text response for potential error message
           if (part.text) {
-            logger.info('Gemini returned text response instead of image')
-            return { success: false, error: part.text }
+            textResponse = part.text
           }
+        }
+
+        // If no image data found but we have text, use it as error message
+        if (textResponse) {
+          logger.info('Gemini returned text response instead of image')
+          return { success: false, error: textResponse }
         }
       }
 
@@ -168,16 +176,24 @@ export class GeminiService {
 
       // Extract image data from response parts
       if (response.candidates && response.candidates[0]?.content?.parts) {
+        let textResponse: string | null = null
+
+        // First, look for image data
         for (const part of response.candidates[0].content.parts) {
           if (part.inlineData && part.inlineData.data) {
             logger.info('✅ Image edited successfully')
             return { success: true, buffer: Buffer.from(part.inlineData.data, 'base64') }
           }
-          // Handle text responses (e.g., content filtering explanations)
+          // Store text response for potential error message
           if (part.text) {
-            logger.info('Gemini returned text response instead of image for edit')
-            return { success: false, error: part.text }
+            textResponse = part.text
           }
+        }
+
+        // If no image data found but we have text, use it as error message
+        if (textResponse) {
+          logger.info('Gemini returned text response instead of image for edit')
+          return { success: false, error: textResponse }
         }
       }
 

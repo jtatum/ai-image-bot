@@ -157,6 +157,38 @@ describe('GeminiService', () => {
       expect(result).toEqual({ success: false, error: 'Some text response without image' })
     })
 
+    it('should return image successfully when both text and image are present', async () => {
+      mockConfig.GOOGLE_API_KEY = 'test-api-key'
+      const mockImageData = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=='
+      const expectedBuffer = Buffer.from(mockImageData, 'base64')
+
+      // @ts-ignore
+      mockGenerateContent.mockResolvedValue({
+        candidates: [
+          {
+            content: {
+              parts: [
+                {
+                  text: 'Okay, here is your image:',
+                },
+                {
+                  inlineData: {
+                    data: mockImageData,
+                    mimeType: 'image/png',
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      })
+
+      const service = new GeminiService()
+      const result = await service.generateImage('test prompt')
+
+      expect(result).toEqual({ success: true, buffer: expectedBuffer })
+    })
+
     it('should return error result when no candidates in response', async () => {
       mockConfig.GOOGLE_API_KEY = 'test-api-key'
 
