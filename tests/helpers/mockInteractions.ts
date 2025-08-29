@@ -145,8 +145,18 @@ export function createMockModalInteraction(overrides: any = {}): ModalSubmitInte
     ...overrides.message
   }
 
-  const mockFields: Partial<ModalSubmitFields> = {
+  // Mock fields with a proper Map structure  
+  const fieldsMap = new Map([
+    ['prompt', {
+      customId: 'prompt',
+      value: 'test modal input',
+      type: 4 // TextInputStyle.Paragraph
+    }]
+  ])
+
+  const mockFields: Partial<ModalSubmitFields> & { fields: any } = {
     getTextInputValue: jest.fn().mockReturnValue('test modal input'),
+    fields: fieldsMap,
     ...overrides.fields
   }
 

@@ -1,36 +1,38 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals'
+
+// Mock utility modules only for this test file
+const mockSafeReply = jest.fn() as jest.MockedFunction<any>
+const mockHandleRegenerateButton = jest.fn() as jest.MockedFunction<any>
+const mockHandleRegenerateModal = jest.fn() as jest.MockedFunction<any>
+const mockHandleEditButton = jest.fn() as jest.MockedFunction<any>
+const mockHandleEditModal = jest.fn() as jest.MockedFunction<any>
+
+jest.doMock('@/utils/interactionHelpers.js', () => ({
+  __esModule: true,
+  safeReply: mockSafeReply,
+}))
+
+jest.doMock('@/utils/regenerateImage.js', () => ({
+  __esModule: true,
+  handleRegenerateButton: mockHandleRegenerateButton,
+  handleRegenerateModal: mockHandleRegenerateModal,
+}))
+
+jest.doMock('@/utils/editImage.js', () => ({
+  __esModule: true,
+  handleEditButton: mockHandleEditButton,
+  handleEditModal: mockHandleEditModal,
+}))
+
 import { ChatInputCommandInteraction } from 'discord.js'
-import { Command } from '@/bot/types.js'
-import interactionCreateEvent from '@/events/interactionCreate.js'
+import { Command, ExtendedClient } from '@/bot/types.js'
+import { InteractionCreateEvent } from '@/presentation/events/implementations/InteractionCreateEvent.js'
 import { createMockChatInputInteraction, createMockButtonInteraction, createMockModalInteraction, createMockInteractionWithClient } from '../helpers/mockInteractions.js'
-
-// Mock the helper utilities
-jest.mock('@/utils/interactionHelpers.js', () => ({
-  safeReply: jest.fn() as jest.MockedFunction<any>,
-}))
-
-jest.mock('@/utils/regenerateImage.js', () => ({
-  handleRegenerateButton: jest.fn() as jest.MockedFunction<any>,
-  handleRegenerateModal: jest.fn() as jest.MockedFunction<any>,
-}))
-
-jest.mock('@/utils/editImage.js', () => ({
-  handleEditButton: jest.fn() as jest.MockedFunction<any>,
-  handleEditModal: jest.fn() as jest.MockedFunction<any>,
-}))
-
-import { safeReply } from '@/utils/interactionHelpers.js'
-import { handleRegenerateButton, handleRegenerateModal } from '@/utils/regenerateImage.js'
-import { handleEditButton, handleEditModal } from '@/utils/editImage.js'
-
-const mockSafeReply = safeReply as jest.MockedFunction<any>
-const mockHandleRegenerateButton = handleRegenerateButton as jest.MockedFunction<any>
-const mockHandleRegenerateModal = handleRegenerateModal as jest.MockedFunction<any>
-const mockHandleEditButton = handleEditButton as jest.MockedFunction<any>
-const mockHandleEditModal = handleEditModal as jest.MockedFunction<any>
 
 describe('InteractionCreate Event', () => {
   let mockCommand: Command
+  let interactionCreateEvent: InteractionCreateEvent
+  let mockClient: ExtendedClient
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -49,6 +51,18 @@ describe('InteractionCreate Event', () => {
       cooldown: 5,
       execute: (jest.fn() as any).mockResolvedValue(undefined),
     }
+
+    // Create mock client with commands and cooldowns
+    mockClient = {
+      commands: new Map([['test', mockCommand]]),
+      cooldowns: new Map(),
+    } as ExtendedClient
+
+    // Initialize the InteractionCreateEvent
+    interactionCreateEvent = new InteractionCreateEvent()
+    interactionCreateEvent.initialize(mockClient)
+
+    // Mocks are set up correctly via global setup
   })
 
   afterEach(() => {
@@ -103,7 +117,7 @@ describe('InteractionCreate Event', () => {
       await interactionCreateEvent.execute(mockButtonInteraction)
 
       expect(mockButtonInteraction.reply).toHaveBeenCalledWith({
-        content: '❌ There was an error processing your request!',
+        content: '❌ There was an error processing your button action!',
         ephemeral: true,
       })
     })
@@ -118,7 +132,7 @@ describe('InteractionCreate Event', () => {
       await interactionCreateEvent.execute(mockButtonInteraction)
 
       expect(mockButtonInteraction.reply).toHaveBeenCalledWith({
-        content: '❌ There was an error processing your request!',
+        content: '❌ There was an error processing your button action!',
         ephemeral: true,
       })
     })
@@ -175,7 +189,7 @@ describe('InteractionCreate Event', () => {
       await interactionCreateEvent.execute(mockModalInteraction)
 
       expect(mockModalInteraction.reply).toHaveBeenCalledWith({
-        content: '❌ There was an error processing your request!',
+        content: '❌ There was an error processing your modal submission!',
         ephemeral: true,
       })
     })
@@ -190,7 +204,7 @@ describe('InteractionCreate Event', () => {
       await interactionCreateEvent.execute(mockModalInteraction)
 
       expect(mockModalInteraction.reply).toHaveBeenCalledWith({
-        content: '❌ There was an error processing your request!',
+        content: '❌ There was an error processing your modal submission!',
         ephemeral: true,
       })
     })
@@ -200,18 +214,15 @@ describe('InteractionCreate Event', () => {
     let mockInteraction: ChatInputCommandInteraction
 
     beforeEach(() => {
-      // Create stateful collections for cooldown testing
-      const commands = new Map([['test', mockCommand]])
-      const cooldowns = new Map()
-
+      // Use the same client cooldowns that the event was initialized with
       mockInteraction = createMockInteractionWithClient(
         createMockChatInputInteraction({
           commandName: 'test',
           user: { id: 'user123', tag: 'TestUser#1234' } as any,
           guild: { name: 'TestGuild' } as any,
         }),
-        commands,
-        cooldowns
+        mockClient.commands,
+        mockClient.cooldowns
       )
     })
 
@@ -291,29 +302,35 @@ describe('InteractionCreate Event', () => {
     })
 
     it('should skip cooldown logic when command cooldown is 0', async () => {
-      // Set command cooldown to 0
+      // Set command cooldown to 0 and create a separate event for this test
       const noCooldownCommand = { ...mockCommand, cooldown: 0, data: { name: 'test' } as any }
-      const commands = new Map([['test', noCooldownCommand]])
-      const cooldowns = new Map()
+      const separateClient = {
+        commands: new Map([['test', noCooldownCommand]]),
+        cooldowns: new Map(),
+      } as ExtendedClient
+
+      // Create separate event instance for this test
+      const noCooldownEvent = new InteractionCreateEvent()
+      noCooldownEvent.initialize(separateClient)
 
       const noCooldownInteraction = createMockInteractionWithClient(
         createMockChatInputInteraction({
           commandName: 'test',
           user: { id: 'user123', tag: 'TestUser#1234' } as any,
         }),
-        commands,
-        cooldowns
+        separateClient.commands,
+        separateClient.cooldowns
       )
 
       // First execution
-      await interactionCreateEvent.execute(noCooldownInteraction)
+      await noCooldownEvent.execute(noCooldownInteraction)
       expect(noCooldownCommand.execute).toHaveBeenCalledTimes(1)
 
       // Reset mock calls
       jest.clearAllMocks()
 
       // Immediate second execution (should be allowed since cooldown is 0)
-      await interactionCreateEvent.execute(noCooldownInteraction)
+      await noCooldownEvent.execute(noCooldownInteraction)
 
       expect(noCooldownCommand.execute).toHaveBeenCalledTimes(1)
       expect(noCooldownInteraction.reply).not.toHaveBeenCalledWith(
@@ -325,27 +342,33 @@ describe('InteractionCreate Event', () => {
 
     it('should use default cooldown of 3 seconds when cooldown is undefined', async () => {
       const defaultCooldownCommand = { ...mockCommand, cooldown: undefined, data: { name: 'test' } as any }
-      const commands = new Map([['test', defaultCooldownCommand]])
-      const cooldowns = new Map()
+      const separateClient = {
+        commands: new Map([['test', defaultCooldownCommand]]),
+        cooldowns: new Map(),
+      } as ExtendedClient
+
+      // Create separate event instance for this test
+      const defaultCooldownEvent = new InteractionCreateEvent()
+      defaultCooldownEvent.initialize(separateClient)
 
       const defaultCooldownInteraction = createMockInteractionWithClient(
         createMockChatInputInteraction({
           commandName: 'test',
           user: { id: 'user123', tag: 'TestUser#1234' } as any,
         }),
-        commands,
-        cooldowns
+        separateClient.commands,
+        separateClient.cooldowns
       )
 
       // First execution
-      await interactionCreateEvent.execute(defaultCooldownInteraction)
+      await defaultCooldownEvent.execute(defaultCooldownInteraction)
       expect(defaultCooldownCommand.execute).toHaveBeenCalledTimes(1)
 
       // Reset mocks
       jest.clearAllMocks()
 
       // Immediate second execution (should be blocked by default 3-second cooldown)
-      await interactionCreateEvent.execute(defaultCooldownInteraction)
+      await defaultCooldownEvent.execute(defaultCooldownInteraction)
 
       expect(defaultCooldownCommand.execute).not.toHaveBeenCalled()
       expect(defaultCooldownInteraction.reply).toHaveBeenCalledWith({
@@ -355,17 +378,14 @@ describe('InteractionCreate Event', () => {
     })
 
     it('should handle different users independently', async () => {
-      const commands = new Map([['test', mockCommand]])
-      const cooldowns = new Map()
-
-      // First user executes command
+      // First user executes command  
       const user1Interaction = createMockInteractionWithClient(
         createMockChatInputInteraction({
           commandName: 'test',
           user: { id: 'user123', tag: 'TestUser1#1234' } as any,
         }),
-        commands,
-        cooldowns
+        mockClient.commands,
+        mockClient.cooldowns
       )
 
       await interactionCreateEvent.execute(user1Interaction)
@@ -377,8 +397,8 @@ describe('InteractionCreate Event', () => {
           commandName: 'test',
           user: { id: 'user456', tag: 'TestUser2#5678' } as any,
         }),
-        commands,
-        cooldowns
+        mockClient.commands,
+        mockClient.cooldowns
       )
 
       // Reset mocks
