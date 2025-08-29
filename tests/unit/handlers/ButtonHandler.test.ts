@@ -481,4 +481,181 @@ describe('ButtonHandler', () => {
       expect(buttonHandler.getMatchingPrefix('admin_ban')).toBe('admin_')
     })
   })
+
+  describe('Button Builder Integration', () => {
+    describe('createImageActionButtons', () => {
+      it('should create action buttons with default options', () => {
+        const actionRow = buttonHandler.createImageActionButtons({
+          userId: 'user123',
+        })
+
+        expect(actionRow).toBeDefined()
+        expect(actionRow.components).toHaveLength(2) // edit and regenerate buttons
+        
+        const buttons = actionRow.components
+        expect((buttons[0].data as any).custom_id).toMatch(/^edit_user123_\d+$/)
+        expect((buttons[1].data as any).custom_id).toMatch(/^regenerate_user123_\d+$/)
+      })
+
+      it('should create action buttons with custom options', () => {
+        const actionRow = buttonHandler.createImageActionButtons({
+          userId: 'user456',
+          timestamp: 1234567890,
+          includeEdit: true,
+          includeRegenerate: true,
+          customLabels: {
+            edit: 'Modify',
+            regenerate: 'Retry'
+          }
+        })
+
+        expect(actionRow.components).toHaveLength(2)
+        
+        const buttons = actionRow.components
+        expect((buttons[0].data as any).custom_id).toBe('edit_user456_1234567890')
+        expect((buttons[1].data as any).custom_id).toBe('regenerate_user456_1234567890')
+      })
+    })
+
+    describe('createRegenerateOnlyButton', () => {
+      it('should create regenerate-only button', () => {
+        const actionRow = buttonHandler.createRegenerateOnlyButton({
+          userId: 'user789',
+        })
+
+        expect(actionRow).toBeDefined()
+        expect(actionRow.components).toHaveLength(1) // regenerate button only
+        
+        const button = actionRow.components[0]
+        expect((button.data as any).custom_id).toMatch(/^regenerate_user789_\d+$/)
+      })
+
+      it('should create regenerate-only button with custom timestamp', () => {
+        const actionRow = buttonHandler.createRegenerateOnlyButton({
+          userId: 'user999',
+          timestamp: 9876543210,
+        })
+
+        expect(actionRow.components).toHaveLength(1)
+        
+        const button = actionRow.components[0]
+        expect((button.data as any).custom_id).toBe('regenerate_user999_9876543210')
+      })
+    })
+
+    describe('parseUserIdFromCustomId', () => {
+      it('should parse user ID from edit button custom ID', () => {
+        const userId = buttonHandler.parseUserIdFromCustomId('edit_123456_1234567890')
+        expect(userId).toBe('123456')
+      })
+
+      it('should parse user ID from regenerate button custom ID', () => {
+        const userId = buttonHandler.parseUserIdFromCustomId('regenerate_789012_1234567890')
+        expect(userId).toBe('789012')
+      })
+
+      it('should return null for invalid custom ID', () => {
+        const userId = buttonHandler.parseUserIdFromCustomId('invalid_format')
+        expect(userId).toBeNull()
+      })
+    })
+
+    describe('parseActionFromCustomId', () => {
+      it('should parse action type from edit button', () => {
+        const action = buttonHandler.parseActionFromCustomId('edit_123_1234567890')
+        expect(action).toBe('edit')
+      })
+
+      it('should parse action type from regenerate button', () => {
+        const action = buttonHandler.parseActionFromCustomId('regenerate_456_1234567890')
+        expect(action).toBe('regenerate')
+      })
+
+      it('should return null for invalid custom ID', () => {
+        const action = buttonHandler.parseActionFromCustomId('unknown_123_456')
+        expect(action).toBeNull()
+      })
+    })
+
+    describe('validateButtonInteraction', () => {
+      it('should validate button interaction with expected prefix', () => {
+        const interaction = createMockButtonInteraction({
+          customId: 'edit_user123_1234567890'
+        })
+
+        const isValid = buttonHandler.validateButtonInteraction(interaction, 'edit_')
+        expect(isValid).toBe(true)
+      })
+
+      it('should reject button interaction with wrong prefix', () => {
+        const interaction = createMockButtonInteraction({
+          customId: 'regenerate_user123_1234567890'
+        })
+
+        const isValid = buttonHandler.validateButtonInteraction(interaction, 'edit_')
+        expect(isValid).toBe(false)
+      })
+
+      it('should reject button interaction with no prefix match', () => {
+        const interaction = createMockButtonInteraction({
+          customId: 'unknown_button'
+        })
+
+        const isValid = buttonHandler.validateButtonInteraction(interaction, 'edit_')
+        expect(isValid).toBe(false)
+      })
+    })
+
+    describe('integration with existing handler functionality', () => {
+      it('should work with created buttons in handler workflow', async () => {
+        // Register a handler for edit buttons
+        buttonHandler.registerHandler({
+          prefix: 'edit_',
+          handler: mockHandler1,
+          description: 'Edit button handler'
+        })
+
+        // Create buttons using the builder
+        const actionRow = buttonHandler.createImageActionButtons({
+          userId: 'user123',
+          timestamp: 1234567890
+        })
+
+        // Extract the edit button's custom ID
+        const editButton = actionRow.components[0]
+        const customId = (editButton.data as any).custom_id as string
+
+        // Create an interaction with that custom ID
+        const interaction = createMockButtonInteraction({ customId })
+
+        // Should be handled by our registered handler
+        expect(buttonHandler.canHandle(customId)).toBe(true)
+        expect(buttonHandler.getMatchingPrefix(customId)).toBe('edit_')
+
+        // Handle the interaction
+        await buttonHandler.handleButton(interaction)
+
+        expect(mockHandler1).toHaveBeenCalledWith(interaction)
+      })
+
+      it('should parse user ID from created button custom IDs', () => {
+        const actionRow = buttonHandler.createImageActionButtons({
+          userId: '456789012345',  // Use numeric Discord user ID
+          timestamp: 9999999999
+        })
+
+        const editButton = actionRow.components[0]
+        const regenerateButton = actionRow.components[1]
+
+        const editCustomId = (editButton.data as any).custom_id as string
+        const regenerateCustomId = (regenerateButton.data as any).custom_id as string
+
+        const editUserId = buttonHandler.parseUserIdFromCustomId(editCustomId)
+        const regenerateUserId = buttonHandler.parseUserIdFromCustomId(regenerateCustomId)
+
+        expect(editUserId).toBe('456789012345')
+        expect(regenerateUserId).toBe('456789012345')
+      })
+    })
+  })
 })

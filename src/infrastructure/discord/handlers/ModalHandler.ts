@@ -1,5 +1,9 @@
-import { ModalSubmitInteraction } from 'discord.js'
+import { ModalSubmitInteraction, ModalBuilder } from 'discord.js'
 import logger from '@/config/logger.js'
+import {
+  EnhancedModalBuilder,
+  ImageModalOptions,
+} from '@/infrastructure/discord/builders/ModalBuilder.js'
 
 /**
  * Function signature for modal submit interaction handlers
@@ -24,6 +28,11 @@ export interface ModalHandlerConfig {
  */
 export class ModalHandler {
   private handlers: Map<string, ModalHandlerConfig> = new Map()
+  private modalBuilder: EnhancedModalBuilder
+
+  constructor() {
+    this.modalBuilder = new EnhancedModalBuilder()
+  }
 
   /**
    * Register a modal handler for a specific prefix
@@ -277,5 +286,95 @@ export class ModalHandler {
       logger.warn(`Failed to get field value for ${fieldId}:`, error)
       return undefined
     }
+  }
+
+  // ===== Modal Builder Integration =====
+
+  /**
+   * Create a regenerate modal with pre-filled content using the enhanced builder
+   * @param options Modal creation options
+   * @returns Discord modal builder
+   */
+  createRegenerateModal(options: ImageModalOptions): ModalBuilder {
+    return this.modalBuilder.createRegenerateModal(options)
+  }
+
+  /**
+   * Create an edit image modal using the enhanced builder
+   * @param options Modal creation options
+   * @returns Discord modal builder
+   */
+  createEditModal(options: ImageModalOptions): ModalBuilder {
+    return this.modalBuilder.createEditModal(options)
+  }
+
+  /**
+   * Create a custom modal with multiple inputs using the enhanced builder
+   * @param options Custom modal configuration
+   * @returns Discord modal builder
+   */
+  createCustomModal(options: {
+    customId: string
+    title: string
+    inputs: Array<{
+      id: string
+      label: string
+      style?: import('discord.js').TextInputStyle
+      placeholder?: string
+      value?: string
+      required?: boolean
+      minLength?: number
+      maxLength?: number
+    }>
+  }): ModalBuilder {
+    return this.modalBuilder.createCustomModal(options)
+  }
+
+  /**
+   * Parse user ID from a modal custom ID using the builder's utility
+   * @param customId The modal's custom ID
+   * @returns User ID or null if not found
+   */
+  parseUserIdFromCustomId(customId: string): string | null {
+    return EnhancedModalBuilder.parseUserIdFromCustomId(customId)
+  }
+
+  /**
+   * Parse modal type from custom ID using the builder's utility
+   * @param customId The modal's custom ID
+   * @returns Modal type ('regenerate' | 'edit') or null if not found
+   */
+  parseModalTypeFromCustomId(customId: string): 'regenerate' | 'edit' | null {
+    return EnhancedModalBuilder.parseModalTypeFromCustomId(customId)
+  }
+
+  /**
+   * Validate that a modal interaction matches expected pattern using the builder's utility
+   * @param interaction The modal interaction
+   * @param expectedPrefix The expected prefix
+   * @returns True if interaction matches pattern
+   */
+  validateModalInteraction(interaction: ModalSubmitInteraction, expectedPrefix: string): boolean {
+    return EnhancedModalBuilder.validateModalInteraction(interaction, expectedPrefix)
+  }
+
+  /**
+   * Get field value from modal safely using the builder's utility
+   * @param interaction The modal submit interaction
+   * @param fieldId The field ID to get
+   * @returns Field value or null if not found
+   */
+  getFieldValueSafe(interaction: ModalSubmitInteraction, fieldId: string): string | null {
+    return EnhancedModalBuilder.getFieldValue(interaction, fieldId)
+  }
+
+  /**
+   * Validate required fields are present using the builder's utility
+   * @param interaction The modal submit interaction
+   * @param requiredFields Array of required field IDs
+   * @returns True if all required fields have values
+   */
+  validateRequiredFields(interaction: ModalSubmitInteraction, requiredFields: string[]): boolean {
+    return EnhancedModalBuilder.validateRequiredFields(interaction, requiredFields)
   }
 }

@@ -629,4 +629,349 @@ describe('ModalHandler', () => {
       expect(sizeValue).toBe('')
     })
   })
+
+  describe('Modal Builder Integration', () => {
+    describe('createRegenerateModal', () => {
+      it('should create regenerate modal with default options', () => {
+        const modal = modalHandler.createRegenerateModal({
+          userId: 'user123',
+        })
+
+        expect(modal).toBeDefined()
+        expect(modal.data.custom_id).toMatch(/^regenerate_modal_user123_\d+$/)
+        expect(modal.data.title).toBe('Edit Prompt and Regenerate')
+        expect(modal.data.components).toHaveLength(1)
+        
+        const actionRow = modal.data.components![0]
+        expect(actionRow.components).toHaveLength(1)
+        
+        const textInput = actionRow.components[0]
+        expect(textInput.custom_id).toBe('prompt')
+        expect(textInput.label).toBe('Image Prompt')
+      })
+
+      it('should create regenerate modal with pre-filled prompt', () => {
+        const modal = modalHandler.createRegenerateModal({
+          userId: 'user456',
+          originalPrompt: 'a cute robot',
+          timestamp: 1234567890,
+        })
+
+        expect(modal.data.custom_id).toBe('regenerate_modal_user456_1234567890')
+        
+        const textInput = modal.data.components![0].components[0]
+        expect(textInput.value).toBe('a cute robot')
+      })
+
+      it('should create regenerate modal with custom max length', () => {
+        const modal = modalHandler.createRegenerateModal({
+          userId: 'user789',
+          maxPromptLength: 500,
+        })
+
+        const textInput = modal.data.components![0].components[0]
+        expect(textInput.max_length).toBe(500)
+      })
+    })
+
+    describe('createEditModal', () => {
+      it('should create edit modal with default options', () => {
+        const modal = modalHandler.createEditModal({
+          userId: 'user123',
+        })
+
+        expect(modal).toBeDefined()
+        expect(modal.data.custom_id).toMatch(/^edit_modal_user123_\d+$/)
+        expect(modal.data.title).toBe('Describe Your Image Edit')
+        expect(modal.data.components).toHaveLength(1)
+        
+        const actionRow = modal.data.components![0]
+        expect(actionRow.components).toHaveLength(1)
+        
+        const textInput = actionRow.components[0]
+        expect(textInput.custom_id).toBe('edit_description')
+        expect(textInput.label).toBe('What changes would you like?')
+      })
+
+      it('should create edit modal with custom options', () => {
+        const modal = modalHandler.createEditModal({
+          userId: 'user456',
+          timestamp: 9876543210,
+          maxEditLength: 300,
+        })
+
+        expect(modal.data.custom_id).toBe('edit_modal_user456_9876543210')
+        
+        const textInput = modal.data.components![0].components[0]
+        expect(textInput.max_length).toBe(300)
+      })
+    })
+
+    describe('createCustomModal', () => {
+      it('should create custom modal with single input', () => {
+        const modal = modalHandler.createCustomModal({
+          customId: 'test_modal_123',
+          title: 'Test Modal',
+          inputs: [
+            {
+              id: 'test_field',
+              label: 'Test Field',
+              placeholder: 'Enter test value',
+              required: true,
+            }
+          ]
+        })
+
+        expect(modal.data.custom_id).toBe('test_modal_123')
+        expect(modal.data.title).toBe('Test Modal')
+        expect(modal.data.components).toHaveLength(1)
+        
+        const textInput = modal.data.components![0].components[0]
+        expect(textInput.custom_id).toBe('test_field')
+        expect(textInput.label).toBe('Test Field')
+        expect(textInput.placeholder).toBe('Enter test value')
+        expect(textInput.required).toBe(true)
+      })
+
+      it('should create custom modal with multiple inputs', () => {
+        const modal = modalHandler.createCustomModal({
+          customId: 'multi_modal_456',
+          title: 'Multi Input Modal',
+          inputs: [
+            {
+              id: 'field1',
+              label: 'Field 1',
+              style: 1, // Short
+            },
+            {
+              id: 'field2',
+              label: 'Field 2',
+              style: 2, // Paragraph
+              minLength: 10,
+              maxLength: 100,
+            }
+          ]
+        })
+
+        expect(modal.data.components).toHaveLength(2)
+        
+        const input1 = modal.data.components![0].components[0]
+        const input2 = modal.data.components![1].components[0]
+        
+        expect(input1.custom_id).toBe('field1')
+        expect(input1.style).toBe(1)
+        
+        expect(input2.custom_id).toBe('field2')
+        expect(input2.style).toBe(2)
+        expect(input2.min_length).toBe(10)
+        expect(input2.max_length).toBe(100)
+      })
+    })
+
+    describe('parseUserIdFromCustomId', () => {
+      it('should parse user ID from regenerate modal custom ID', () => {
+        const userId = modalHandler.parseUserIdFromCustomId('regenerate_modal_123456_1234567890')
+        expect(userId).toBe('123456')
+      })
+
+      it('should parse user ID from edit modal custom ID', () => {
+        const userId = modalHandler.parseUserIdFromCustomId('edit_modal_789012_1234567890')
+        expect(userId).toBe('789012')
+      })
+
+      it('should return null for invalid custom ID', () => {
+        const userId = modalHandler.parseUserIdFromCustomId('invalid_format')
+        expect(userId).toBeNull()
+      })
+    })
+
+    describe('parseModalTypeFromCustomId', () => {
+      it('should parse modal type from regenerate modal', () => {
+        const type = modalHandler.parseModalTypeFromCustomId('regenerate_modal_123_1234567890')
+        expect(type).toBe('regenerate')
+      })
+
+      it('should parse modal type from edit modal', () => {
+        const type = modalHandler.parseModalTypeFromCustomId('edit_modal_456_1234567890')
+        expect(type).toBe('edit')
+      })
+
+      it('should return null for invalid custom ID', () => {
+        const type = modalHandler.parseModalTypeFromCustomId('unknown_modal_123_456')
+        expect(type).toBeNull()
+      })
+    })
+
+    describe('validateModalInteraction', () => {
+      it('should validate modal interaction with expected prefix', () => {
+        const interaction = createMockModalInteraction({
+          customId: 'regenerate_modal_user123_1234567890'
+        })
+
+        const isValid = modalHandler.validateModalInteraction(interaction, 'regenerate_modal_')
+        expect(isValid).toBe(true)
+      })
+
+      it('should reject modal interaction with wrong prefix', () => {
+        const interaction = createMockModalInteraction({
+          customId: 'edit_modal_user123_1234567890'
+        })
+
+        const isValid = modalHandler.validateModalInteraction(interaction, 'regenerate_modal_')
+        expect(isValid).toBe(false)
+      })
+
+      it('should reject modal interaction with no prefix match', () => {
+        const interaction = createMockModalInteraction({
+          customId: 'unknown_modal'
+        })
+
+        const isValid = modalHandler.validateModalInteraction(interaction, 'regenerate_modal_')
+        expect(isValid).toBe(false)
+      })
+    })
+
+    describe('getFieldValueSafe', () => {
+      it('should get field value safely when field exists', () => {
+        const interaction = createMockModalInteraction({
+          fields: {
+            getTextInputValue: jest.fn().mockReturnValue('test value'),
+          },
+        })
+
+        const value = modalHandler.getFieldValueSafe(interaction, 'test_field')
+        expect(value).toBe('test value')
+      })
+
+      it('should return null when field does not exist', () => {
+        const interaction = createMockModalInteraction({
+          fields: {
+            getTextInputValue: jest.fn().mockImplementation(() => {
+              throw new Error('Field not found')
+            }),
+          },
+        })
+
+        const value = modalHandler.getFieldValueSafe(interaction, 'missing_field')
+        expect(value).toBeNull()
+      })
+    })
+
+    describe('validateRequiredFields', () => {
+      it('should validate when all required fields have values', () => {
+        const interaction = createMockModalInteraction({
+          fields: {
+            getTextInputValue: jest.fn().mockImplementation((fieldId) => {
+              const values: Record<string, string> = {
+                'field1': 'value1',
+                'field2': 'value2',
+                'field3': 'value3',
+              }
+              return values[fieldId as string] || null
+            }),
+          },
+        })
+
+        const isValid = modalHandler.validateRequiredFields(interaction, ['field1', 'field2'])
+        expect(isValid).toBe(true)
+      })
+
+      it('should fail validation when required field is missing', () => {
+        const interaction = createMockModalInteraction({
+          fields: {
+            getTextInputValue: jest.fn().mockImplementation((fieldId) => {
+              if (fieldId === 'field1') return 'value1'
+              throw new Error('Field not found')
+            }),
+          },
+        })
+
+        const isValid = modalHandler.validateRequiredFields(interaction, ['field1', 'missing_field'])
+        expect(isValid).toBe(false)
+      })
+
+      it('should fail validation when required field is empty', () => {
+        const interaction = createMockModalInteraction({
+          fields: {
+            getTextInputValue: jest.fn().mockImplementation((fieldId) => {
+              const values: Record<string, string> = {
+                'field1': 'value1',
+                'field2': '   ', // whitespace only
+              }
+              return values[fieldId as string] || null
+            }),
+          },
+        })
+
+        const isValid = modalHandler.validateRequiredFields(interaction, ['field1', 'field2'])
+        expect(isValid).toBe(false)
+      })
+    })
+
+    describe('integration with existing handler functionality', () => {
+      it('should work with created modals in handler workflow', async () => {
+        // Register a handler for regenerate modals
+        modalHandler.registerHandler({
+          prefix: 'regenerate_modal_',
+          handler: mockHandler1,
+          description: 'Regenerate modal handler'
+        })
+
+        // Create modal using the builder
+        const modal = modalHandler.createRegenerateModal({
+          userId: 'user123',
+          timestamp: 1234567890
+        })
+
+        // Extract the modal's custom ID
+        const customId = modal.data.custom_id as string
+
+        // Create an interaction with that custom ID
+        const interaction = createMockModalInteraction({ customId })
+
+        // Should be handled by our registered handler
+        expect(modalHandler.canHandle(customId)).toBe(true)
+        expect(modalHandler.getMatchingPrefix(customId)).toBe('regenerate_modal_')
+
+        // Handle the interaction
+        await modalHandler.handleModal(interaction)
+
+        expect(mockHandler1).toHaveBeenCalledWith(interaction)
+      })
+
+      it('should parse user ID from created modal custom IDs', () => {
+        const regenerateModal = modalHandler.createRegenerateModal({
+          userId: '456789012345',  // Use numeric Discord user ID
+          timestamp: 9999999999
+        })
+
+        const editModal = modalHandler.createEditModal({
+          userId: '456789012345',  // Use numeric Discord user ID
+          timestamp: 9999999999
+        })
+
+        const regenerateUserId = modalHandler.parseUserIdFromCustomId(regenerateModal.data.custom_id as string)
+        const editUserId = modalHandler.parseUserIdFromCustomId(editModal.data.custom_id as string)
+
+        expect(regenerateUserId).toBe('456789012345')
+        expect(editUserId).toBe('456789012345')
+      })
+
+      it('should parse modal types from created modal custom IDs', () => {
+        const regenerateModal = modalHandler.createRegenerateModal({
+          userId: '789012345678',  // Use numeric Discord user ID
+        })
+
+        const editModal = modalHandler.createEditModal({
+          userId: '789012345678',  // Use numeric Discord user ID
+        })
+
+        const regenerateType = modalHandler.parseModalTypeFromCustomId(regenerateModal.data.custom_id as string)
+        const editType = modalHandler.parseModalTypeFromCustomId(editModal.data.custom_id as string)
+
+        expect(regenerateType).toBe('regenerate')
+        expect(editType).toBe('edit')
+      })
+    })
+  })
 })

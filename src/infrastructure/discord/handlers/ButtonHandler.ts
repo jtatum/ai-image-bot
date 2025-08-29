@@ -1,5 +1,9 @@
-import { ButtonInteraction } from 'discord.js'
+import { ButtonInteraction, ActionRowBuilder, ButtonBuilder } from 'discord.js'
 import logger from '@/config/logger.js'
+import {
+  EnhancedButtonBuilder,
+  ActionButtonOptions,
+} from '@/infrastructure/discord/builders/ButtonBuilder.js'
 
 /**
  * Function signature for button interaction handlers
@@ -24,6 +28,11 @@ export interface ButtonHandlerConfig {
  */
 export class ButtonHandler {
   private handlers: Map<string, ButtonHandlerConfig> = new Map()
+  private buttonBuilder: EnhancedButtonBuilder
+
+  constructor() {
+    this.buttonBuilder = new EnhancedButtonBuilder()
+  }
 
   /**
    * Register a button handler for a specific prefix
@@ -209,5 +218,55 @@ export class ButtonHandler {
   getMatchingPrefix(customId: string): string | undefined {
     const handler = this.findHandler(customId)
     return handler?.prefix
+  }
+
+  // ===== Button Builder Integration =====
+
+  /**
+   * Create standardized image action buttons using the enhanced builder
+   * @param options Button creation options
+   * @returns Action row with buttons
+   */
+  createImageActionButtons(options: ActionButtonOptions): ActionRowBuilder<ButtonBuilder> {
+    return this.buttonBuilder.createImageActionButtons(options)
+  }
+
+  /**
+   * Create regenerate-only button for error cases using the enhanced builder
+   * @param options Button creation options (excludes includeEdit)
+   * @returns Action row with regenerate button only
+   */
+  createRegenerateOnlyButton(
+    options: Omit<ActionButtonOptions, 'includeEdit'>
+  ): ActionRowBuilder<ButtonBuilder> {
+    return this.buttonBuilder.createRegenerateOnlyButton(options)
+  }
+
+  /**
+   * Parse user ID from a button custom ID using the builder's utility
+   * @param customId The button's custom ID
+   * @returns User ID or null if not found
+   */
+  parseUserIdFromCustomId(customId: string): string | null {
+    return EnhancedButtonBuilder.parseUserIdFromCustomId(customId)
+  }
+
+  /**
+   * Parse action type from a button custom ID using the builder's utility
+   * @param customId The button's custom ID
+   * @returns Action type ('edit' | 'regenerate') or null if not found
+   */
+  parseActionFromCustomId(customId: string): 'edit' | 'regenerate' | null {
+    return EnhancedButtonBuilder.parseActionFromCustomId(customId)
+  }
+
+  /**
+   * Validate that a button interaction matches expected pattern using the builder's utility
+   * @param interaction The button interaction
+   * @param expectedPrefix The expected prefix
+   * @returns True if interaction matches pattern
+   */
+  validateButtonInteraction(interaction: ButtonInteraction, expectedPrefix: string): boolean {
+    return EnhancedButtonBuilder.validateButtonInteraction(interaction, expectedPrefix)
   }
 }

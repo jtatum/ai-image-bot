@@ -112,6 +112,9 @@ export class InteractionCreateEvent extends BaseEvent {
    * Check if the interaction can be handled by the current setup
    */
   private canHandleInteraction(interaction: Interaction): boolean {
+    if (!this.router) {
+      return false
+    }
     return this.router.canHandle(interaction)
   }
 
