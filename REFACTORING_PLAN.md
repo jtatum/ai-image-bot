@@ -190,6 +190,11 @@ src/
 - [ ] Type checking passes
 - [ ] Performance benchmarks
 
+#### Step 6.3: Accumulated tech debt
+
+- [ ] deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+- [ ] deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+
 ## Success Metrics
 
 1. **Zero breaking changes** during development
