@@ -1,4 +1,4 @@
-import { GoogleGenAI, HarmCategory, type SafetySetting } from '@google/genai'
+import { GoogleGenAI, HarmCategory, HarmBlockThreshold, type SafetySetting } from '@google/genai'
 import { config } from '@/config/environment.js'
 import logger from '@/config/logger.js'
 import { Buffer } from 'node:buffer'
@@ -56,7 +56,7 @@ export class GeminiService {
       if (mapping.envVar) {
         safetySettings.push({
           category: mapping.category,
-          threshold: mapping.envVar as any,
+          threshold: mapping.envVar as HarmBlockThreshold,
         })
       }
     }

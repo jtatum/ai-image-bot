@@ -80,14 +80,26 @@ jest.mock('discord.js', () => ({
     
     return builder;
   }),
-  EmbedBuilder: jest.fn().mockImplementation(() => ({
-    setColor: jest.fn().mockReturnThis(),
-    setTitle: jest.fn().mockReturnThis(),
-    setDescription: jest.fn().mockReturnThis(),
-    addFields: jest.fn().mockReturnThis(),
-    setTimestamp: jest.fn().mockReturnThis(),
-    setFooter: jest.fn().mockReturnThis()
-  })),
+  EmbedBuilder: jest.fn().mockImplementation(function MockEmbedBuilder() {
+    const fields: any[] = []
+    const embed = {
+      setColor: jest.fn().mockReturnThis(),
+      setTitle: jest.fn().mockReturnThis(),
+      setDescription: jest.fn().mockReturnThis(),
+      addFields: jest.fn().mockImplementation((...fieldsToAdd) => {
+        fields.push(...fieldsToAdd)
+        return embed
+      }),
+      setTimestamp: jest.fn().mockReturnThis(),
+      setFooter: jest.fn().mockReturnThis(),
+      toJSON: jest.fn().mockReturnValue({
+        fields
+      })
+    }
+    // Make it match instanceof checks
+    Object.setPrototypeOf(embed, MockEmbedBuilder.prototype)
+    return embed
+  }),
   ActionRowBuilder: jest.fn().mockImplementation(() => {
     const components: any[] = []
     const actionRow = {

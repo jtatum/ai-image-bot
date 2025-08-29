@@ -1,4 +1,4 @@
-import { GoogleGenAI, HarmCategory, type SafetySetting } from '@google/genai'
+import { GoogleGenAI, HarmCategory, HarmBlockThreshold, type SafetySetting } from '@google/genai'
 import { IImageGenerator, IImageResult } from '@/domain/interfaces/IImageGenerator.js'
 import { config } from '@/config/environment.js'
 import logger from '@/config/logger.js'
@@ -182,7 +182,7 @@ export class GeminiAdapter implements IImageGenerator {
       if (mapping.envVar) {
         safetySettings.push({
           category: mapping.category,
-          threshold: mapping.envVar as any,
+          threshold: mapping.envVar as HarmBlockThreshold,
         })
       }
     }
@@ -193,17 +193,22 @@ export class GeminiAdapter implements IImageGenerator {
   /**
    * Process the Gemini API response and extract image data or error information
    */
-  private processGenerationResponse(response: any, processingTime: number): IImageResult {
+  private processGenerationResponse(response: unknown, processingTime: number): IImageResult {
     // Extract image data from response parts
-    if (response.candidates && response.candidates[0]?.content?.parts) {
+    if (
+      this.isValidResponse(response) &&
+      response.candidates &&
+      response.candidates[0]?.content?.parts
+    ) {
       let textResponse: string | null = null
 
       // First, look for image data
       for (const part of response.candidates[0].content.parts) {
-        if (part.inlineData && part.inlineData.data) {
+        const partData = part as { inlineData?: { data?: string }; text?: string }
+        if (partData.inlineData && partData.inlineData.data) {
           return {
             success: true,
-            buffer: Buffer.from(part.inlineData.data, 'base64'),
+            buffer: Buffer.from(partData.inlineData.data, 'base64'),
             metadata: {
               model: this.modelName,
               generatedAt: new Date(),
@@ -212,8 +217,8 @@ export class GeminiAdapter implements IImageGenerator {
           }
         }
         // Store text response for potential error message
-        if (part.text) {
-          textResponse = part.text
+        if (partData.text) {
+          textResponse = partData.text
         }
       }
 
@@ -243,18 +248,24 @@ export class GeminiAdapter implements IImageGenerator {
       | undefined
 
     // Check promptFeedback for safety filtering
-    if (response.promptFeedback?.blockReason) {
-      errorMessage = `Content blocked: ${response.promptFeedback.blockReason}`
+    const responseData = response as {
+      promptFeedback?: { blockReason?: string; safetyRatings?: unknown[] }
+      candidates?: { finishReason?: string }[]
+    }
+    if (responseData.promptFeedback?.blockReason) {
+      errorMessage = `Content blocked: ${responseData.promptFeedback.blockReason}`
       safetyFiltering = {
         blocked: true,
-        reason: response.promptFeedback.blockReason,
-        categories: response.promptFeedback.safetyRatings?.map((rating: any) => rating.category),
+        reason: responseData.promptFeedback.blockReason,
+        categories: responseData.promptFeedback.safetyRatings?.map(
+          (rating: unknown) => (rating as { category: unknown }).category
+        ) as string[],
       }
     }
 
     // Check candidates finishReason
-    if (response.candidates && response.candidates[0]?.finishReason) {
-      const finishReason = response.candidates[0].finishReason
+    if (responseData.candidates && responseData.candidates[0]?.finishReason) {
+      const finishReason = responseData.candidates[0].finishReason
       if (finishReason !== 'STOP') {
         errorMessage = `Generation stopped: ${finishReason}`
       }
@@ -262,14 +273,16 @@ export class GeminiAdapter implements IImageGenerator {
 
     // Log detailed response for debugging
     logger.debug('Gemini response details:', {
-      candidates: response.candidates?.map((c: any) => ({
-        finishReason: c.finishReason,
-        contentParts: c.content?.parts?.map((p: any) => ({
-          hasInlineData: !!p.inlineData,
-          hasText: !!p.text,
-        })),
+      candidates: responseData.candidates?.map((c: unknown) => ({
+        finishReason: (c as { finishReason?: unknown }).finishReason,
+        contentParts: (c as { content?: { parts?: unknown[] } }).content?.parts?.map(
+          (p: unknown) => ({
+            hasInlineData: !!(p as { inlineData?: unknown }).inlineData,
+            hasText: !!(p as { text?: unknown }).text,
+          })
+        ),
       })),
-      promptFeedback: response.promptFeedback,
+      promptFeedback: responseData.promptFeedback,
     })
 
     return {
@@ -282,5 +295,19 @@ export class GeminiAdapter implements IImageGenerator {
         ...(safetyFiltering && { safetyFiltering }),
       },
     }
+  }
+
+  /**
+   * Type guard to check if response has expected structure
+   */
+  private isValidResponse(
+    response: unknown
+  ): response is { candidates: Array<{ content: { parts: Array<unknown> } }> } {
+    return (
+      typeof response === 'object' &&
+      response !== null &&
+      'candidates' in response &&
+      Array.isArray((response as { candidates: unknown }).candidates)
+    )
   }
 }

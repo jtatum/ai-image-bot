@@ -5,6 +5,7 @@ import { EventLoader } from '@/utils/eventLoader.js'
 import { HealthCheckService } from '@/services/healthCheck.js'
 import { GracefulShutdown } from '@/utils/gracefulShutdown.js'
 import { RateLimiter } from '@/utils/rateLimiter.js'
+import { ExtendedClient } from '@/bot/types.js'
 import logger from '@/config/logger.js'
 import { config } from '@/config/environment.js'
 
@@ -34,7 +35,7 @@ class GeminiBot {
   private setupRateLimiters(): void {
     // Global rate limiting is now handled by individual command cooldowns
     // Add the rate limiter to the client for use in command handlers
-    ;(this.client as any).rateLimiter = this.rateLimiter
+    ;(this.client as ExtendedClient).rateLimiter = this.rateLimiter
   }
 
   public async start(): Promise<void> {
