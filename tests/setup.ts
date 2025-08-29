@@ -60,15 +60,26 @@ jest.mock('discord.js', () => ({
     Channel: 'CHANNEL',
     Reaction: 'REACTION'
   },
-  SlashCommandBuilder: jest.fn().mockImplementation(() => ({
-    setName: jest.fn().mockReturnThis(),
-    setDescription: jest.fn().mockReturnThis(),
-    addStringOption: jest.fn().mockReturnThis(),
-    addIntegerOption: jest.fn().mockReturnThis(),
-    addBooleanOption: jest.fn().mockReturnThis(),
-    toJSON: jest.fn().mockReturnValue({}),
-    name: 'test-command'
-  })),
+  SlashCommandBuilder: jest.fn().mockImplementation(() => {
+    let commandName = '';
+    const builder = {};
+    
+    builder.setName = jest.fn().mockImplementation((name) => {
+      commandName = name;
+      return builder;
+    });
+    builder.setDescription = jest.fn().mockReturnValue(builder);
+    builder.addStringOption = jest.fn().mockReturnValue(builder);
+    builder.addIntegerOption = jest.fn().mockReturnValue(builder);
+    builder.addBooleanOption = jest.fn().mockReturnValue(builder);
+    builder.toJSON = jest.fn().mockReturnValue({});
+    
+    Object.defineProperty(builder, 'name', {
+      get() { return commandName; }
+    });
+    
+    return builder;
+  }),
   EmbedBuilder: jest.fn().mockImplementation(() => ({
     setColor: jest.fn().mockReturnThis(),
     setTitle: jest.fn().mockReturnThis(),

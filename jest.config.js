@@ -25,7 +25,12 @@ export default {
           '@/events/*': ['events/*'],
           '@/services/*': ['services/*'],
           '@/utils/*': ['utils/*'],
-          '@/bot/*': ['bot/*']
+          '@/bot/*': ['bot/*'],
+          '@/domain/*': ['domain/*'],
+          '@/application/*': ['application/*'],
+          '@/infrastructure/*': ['infrastructure/*'],
+          '@/presentation/*': ['presentation/*'],
+          '@/shared/*': ['shared/*']
         }
       }
     }]

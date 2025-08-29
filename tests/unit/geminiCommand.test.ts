@@ -77,7 +77,7 @@ describe('Gemini Command', () => {
 
   describe('Command Structure', () => {
     it('should have correct command data', () => {
-      expect(geminiCommand.data.name).toBe('test-command') // From mock
+      expect(geminiCommand.data.name).toBe('gemini') // Actual command name
       expect(geminiCommand.cooldown).toBe(30)
       expect(typeof geminiCommand.execute).toBe('function')
     })
