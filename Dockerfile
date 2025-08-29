@@ -1,5 +1,5 @@
 # Use the official Node.js runtime as the base image
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 
 # Set the working directory in the container
 WORKDIR /app
@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 
 # Create a non-root user
 RUN addgroup -g 1001 -S nodejs
@@ -29,8 +29,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install only production dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Install only production dependencies (skip prepare scripts like husky)
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
 # Copy built application from base stage
 COPY --from=base --chown=geminibot:nodejs /app/dist ./dist
