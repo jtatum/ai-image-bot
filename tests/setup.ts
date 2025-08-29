@@ -89,13 +89,17 @@ jest.mock('discord.js', () => ({
     setFooter: jest.fn().mockReturnThis()
   })),
   ActionRowBuilder: jest.fn().mockImplementation(() => {
+    const components: any[] = []
     const actionRow = {
-      components: [],
-      addComponents: jest.fn().mockImplementation((...components) => {
-        actionRow.components.push(...components)
+      components,
+      addComponents: jest.fn().mockImplementation((...comps) => {
+        components.push(...comps)
         return actionRow
       }),
-      toJSON: jest.fn().mockReturnValue({ type: 1, components: [] })
+      toJSON: jest.fn().mockImplementation(() => ({ 
+        type: 1, 
+        components: components.map(comp => comp.toJSON ? comp.toJSON() : comp) 
+      }))
     }
     return actionRow
   }),
@@ -103,6 +107,9 @@ jest.mock('discord.js', () => ({
     let customId = ''
     let label = ''
     let style = 2
+    let emoji = ''
+    let url = ''
+    let disabled = false
     
     const button = {
       setCustomId: jest.fn().mockImplementation((id) => {
@@ -117,16 +124,34 @@ jest.mock('discord.js', () => ({
         style = st
         return button
       }),
+      setEmoji: jest.fn().mockImplementation((em) => {
+        emoji = em
+        return button
+      }),
+      setURL: jest.fn().mockImplementation((u) => {
+        url = u
+        return button
+      }),
+      setDisabled: jest.fn().mockImplementation((dis) => {
+        disabled = dis
+        return button
+      }),
       toJSON: jest.fn().mockImplementation(() => ({
         type: 2,
         custom_id: customId,
         label: label,
-        style: style
+        style: style,
+        emoji: emoji || undefined,
+        url: url || undefined,
+        disabled: disabled || undefined
       })),
       data: {
         get custom_id() { return customId },
         get label() { return label },
-        get style() { return style }
+        get style() { return style },
+        get emoji() { return emoji },
+        get url() { return url || undefined },
+        get disabled() { return disabled }
       }
     }
     return button
@@ -138,25 +163,134 @@ jest.mock('discord.js', () => ({
     Danger: 4,
     Link: 5
   },
-  ModalBuilder: jest.fn().mockImplementation(() => ({
-    setCustomId: jest.fn().mockReturnThis(),
-    setTitle: jest.fn().mockReturnThis(),
-    addComponents: jest.fn().mockReturnThis()
-  })),
-  TextInputBuilder: jest.fn().mockImplementation(() => ({
-    setCustomId: jest.fn().mockReturnThis(),
-    setLabel: jest.fn().mockReturnThis(),
-    setStyle: jest.fn().mockReturnThis(),
-    setPlaceholder: jest.fn().mockReturnThis(),
-    setValue: jest.fn().mockReturnThis(),
-    setRequired: jest.fn().mockReturnThis(),
-    setMaxLength: jest.fn().mockReturnThis()
-  })),
+  ModalBuilder: jest.fn().mockImplementation(() => {
+    let customId = ''
+    let title = ''
+    const components: any[] = []
+
+    const modal = {
+      setCustomId: jest.fn().mockImplementation((id) => {
+        customId = id
+        return modal
+      }),
+      setTitle: jest.fn().mockImplementation((t) => {
+        title = t
+        return modal
+      }),
+      addComponents: jest.fn().mockImplementation((...comps) => {
+        components.push(...comps)
+        return modal
+      }),
+      toJSON: jest.fn().mockImplementation(() => ({
+        type: 9,
+        custom_id: customId,
+        title: title,
+        components: components.map(comp => {
+          if (comp.components) {
+            // This is already an ActionRow with components
+            return {
+              type: 1,
+              components: comp.components.map((c: any) => c.toJSON ? c.toJSON() : c)
+            }
+          } else {
+            // This is a single component that needs to be wrapped in ActionRow
+            return {
+              type: 1,
+              components: [comp.toJSON ? comp.toJSON() : comp]
+            }
+          }
+        })
+      })),
+      data: {
+        get custom_id() { return customId },
+        get title() { return title },
+        get components() { 
+          return components.map(comp => {
+            if (comp.components) {
+              // This is already an ActionRow with components
+              return {
+                type: 1,
+                components: comp.components.map((c: any) => c.toJSON ? c.toJSON() : c)
+              }
+            } else {
+              // This is a single component that needs to be wrapped in ActionRow
+              return {
+                type: 1,
+                components: [comp.toJSON ? comp.toJSON() : comp]
+              }
+            }
+          })
+        }
+      }
+    }
+    return modal
+  }),
+  TextInputBuilder: jest.fn().mockImplementation(() => {
+    let customId = ''
+    let label = ''
+    let style = 1
+    let placeholder = ''
+    let value = ''
+    let required = true
+    let minLength: number | undefined = undefined
+    let maxLength: number | undefined = undefined
+
+    const textInput = {
+      setCustomId: jest.fn().mockImplementation((id) => {
+        customId = id
+        return textInput
+      }),
+      setLabel: jest.fn().mockImplementation((lbl) => {
+        label = lbl
+        return textInput
+      }),
+      setStyle: jest.fn().mockImplementation((st) => {
+        style = st
+        return textInput
+      }),
+      setPlaceholder: jest.fn().mockImplementation((ph) => {
+        placeholder = ph
+        return textInput
+      }),
+      setValue: jest.fn().mockImplementation((val) => {
+        value = val
+        return textInput
+      }),
+      setRequired: jest.fn().mockImplementation((req) => {
+        required = req
+        return textInput
+      }),
+      setMinLength: jest.fn().mockImplementation((min) => {
+        minLength = min
+        return textInput
+      }),
+      setMaxLength: jest.fn().mockImplementation((max) => {
+        maxLength = max
+        return textInput
+      }),
+      toJSON: jest.fn().mockImplementation(() => ({
+        type: 4,
+        custom_id: customId,
+        label: label,
+        style: style,
+        placeholder: placeholder || undefined,
+        value: value || undefined,
+        required: required,
+        min_length: minLength,
+        max_length: maxLength
+      }))
+    }
+    return textInput
+  }),
   TextInputStyle: {
     Short: 1,
     Paragraph: 2
   },
-  AttachmentBuilder: jest.fn().mockImplementation(() => ({})),
+  AttachmentBuilder: jest.fn().mockImplementation((buffer, options) => ({
+    attachment: buffer,
+    name: options?.name,
+    description: options?.description
+  })),
   Events: {
     ClientReady: 'ready',
     InteractionCreate: 'interactionCreate',
