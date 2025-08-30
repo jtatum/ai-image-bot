@@ -1,7 +1,6 @@
 import 'reflect-metadata'
 import { DiscordClient } from '@/bot/client.js'
-import { CommandLoader } from '@/infrastructure/loaders/CommandLoader.js'
-import { EventLoader } from '@/infrastructure/loaders/EventLoader.js'
+import { CommandLoader, EventLoader } from '@/infrastructure/loaders/index.js'
 import { HealthCheckService } from '@/infrastructure/monitoring/HealthCheck.js'
 import { GracefulShutdown } from '@/infrastructure/monitoring/GracefulShutdown.js'
 import { RateLimiter } from '@/shared/utils/rateLimiter.js'

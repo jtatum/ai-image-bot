@@ -1,4 +1,4 @@
-import { EventLoader } from '@/infrastructure/loaders/EventLoader.js'
+import { EventLoader } from '@/infrastructure/loaders/index.js'
 import { ExtendedClient } from '@/bot/types.js'
 import { Collection } from 'discord.js'
 import { join } from 'path'
@@ -37,11 +37,11 @@ describe('EventLoader', () => {
 
     it('should create loader with PathResolver interface', () => {
       const mockPathResolver = {
-        getEventsPath: jest.fn().mockReturnValue('/mock/path')
+        getModulesPath: jest.fn().mockReturnValue('/mock/path')
       }
       const loader = new EventLoader(mockClient, mockPathResolver)
       expect(loader).toBeInstanceOf(EventLoader)
-      expect(mockPathResolver.getEventsPath).toHaveBeenCalled()
+      expect(mockPathResolver.getModulesPath).toHaveBeenCalled()
     })
 
     it('should use default path resolver when none provided', () => {

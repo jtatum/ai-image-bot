@@ -1,4 +1,4 @@
-import { CommandLoader } from '@/infrastructure/loaders/CommandLoader.js'
+import { CommandLoader } from '@/infrastructure/loaders/index.js'
 import { ExtendedClient } from '@/bot/types.js'
 import { Collection } from 'discord.js'
 import { join } from 'path'

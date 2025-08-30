@@ -1,4 +1,4 @@
-import { EventLoader } from '@/infrastructure/loaders/EventLoader.js'
+import { EventLoader } from '@/infrastructure/loaders/index.js'
 import { ExtendedClient } from '@/bot/types.js'
 import { Collection } from 'discord.js'
 import { join } from 'path'
