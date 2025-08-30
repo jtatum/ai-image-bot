@@ -467,19 +467,27 @@ describe('GeminiCommand', () => {
       const retryButton = buttons[0].components[0]
       expect(retryButton.data.label).toBe('🔄 Try Again')
       expect(retryButton.data.style).toBe(ButtonStyle.Primary)
+      // Test that retry button also uses new architecture prefix
+      expect(retryButton.data.custom_id).toMatch(/^new_regenerate_user123_\d+$/)
     })
 
-    it('should encode prompt in button custom IDs', () => {
+    it('should create buttons with new architecture prefixes', () => {
       const command = new GeminiCommand()
       const testPrompt = 'a cute robot'
-      const encodedPrompt = Buffer.from(testPrompt).toString('base64')
       const buttons = (command as any).buildActionButtons(testPrompt, 'user123')
 
       const actionRow = buttons[0]
       const [regenerateButton, editButton] = actionRow.components
 
-      expect(regenerateButton.data.custom_id).toBe(`regenerate_user123_${encodedPrompt}`)
-      expect(editButton.data.custom_id).toBe(`edit_user123_${encodedPrompt}`)
+      // Test that buttons use new architecture prefixes
+      expect(regenerateButton.data.custom_id).toMatch(/^new_regenerate_user123_\d+$/)
+      expect(editButton.data.custom_id).toMatch(/^new_edit_user123_\d+$/)
+      
+      // Test labels and styles
+      expect(regenerateButton.data.label).toBe('🔄 Regenerate')
+      expect(editButton.data.label).toBe('✏️ Edit')
+      expect(regenerateButton.data.style).toBe(2) // ButtonStyle.Secondary
+      expect(editButton.data.style).toBe(2) // ButtonStyle.Secondary
     })
   })
 

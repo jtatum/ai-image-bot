@@ -6,7 +6,6 @@ import {
   ButtonBuilder,
   ButtonStyle,
 } from 'discord.js'
-import { Buffer } from 'node:buffer'
 import { BaseCommand } from '@/presentation/commands/base/BaseCommand.js'
 import { GenerateImageUseCase } from '@/application/use-cases/GenerateImageUseCase.js'
 import { GeminiAdapter } from '@/infrastructure/google/GeminiAdapter.js'
@@ -177,15 +176,16 @@ export class GeminiCommand extends BaseCommand {
 
   /**
    * Build action buttons for successful image generation
+   * Using new architecture prefixes for testing
    */
-  private buildActionButtons(prompt: string, userId: string) {
+  private buildActionButtons(_prompt: string, userId: string) {
     const regenerateButton = new ButtonBuilder()
-      .setCustomId(`regenerate_${userId}_${Buffer.from(prompt).toString('base64')}`)
+      .setCustomId(`new_regenerate_${userId}_${Date.now()}`)
       .setLabel('🔄 Regenerate')
       .setStyle(ButtonStyle.Secondary)
 
     const editButton = new ButtonBuilder()
-      .setCustomId(`edit_${userId}_${Buffer.from(prompt).toString('base64')}`)
+      .setCustomId(`new_edit_${userId}_${Date.now()}`)
       .setLabel('✏️ Edit')
       .setStyle(ButtonStyle.Secondary)
 
@@ -194,10 +194,11 @@ export class GeminiCommand extends BaseCommand {
 
   /**
    * Build retry button for failed generation
+   * Using new architecture prefix for testing
    */
-  private buildRetryButton(prompt: string, userId: string) {
+  private buildRetryButton(_prompt: string, userId: string) {
     const retryButton = new ButtonBuilder()
-      .setCustomId(`regenerate_${userId}_${Buffer.from(prompt).toString('base64')}`)
+      .setCustomId(`new_regenerate_${userId}_${Date.now()}`)
       .setLabel('🔄 Try Again')
       .setStyle(ButtonStyle.Primary)
 
