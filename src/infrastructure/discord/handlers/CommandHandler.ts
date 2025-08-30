@@ -2,7 +2,10 @@ import { ChatInputCommandInteraction } from 'discord.js'
 import { Command, ExtendedClient } from '@/bot/types.js'
 import logger from '@/infrastructure/monitoring/Logger.js'
 // Inline safeReply function since we removed the utils
-async function safeReply(interaction: ChatInputCommandInteraction, options: any): Promise<void> {
+async function safeReply(
+  interaction: ChatInputCommandInteraction,
+  options: { content: string; ephemeral?: boolean }
+): Promise<void> {
   try {
     if (interaction.replied || interaction.deferred) {
       await interaction.editReply(options)

@@ -114,7 +114,7 @@ export class ValidationUtils {
     } catch (error) {
       if (error instanceof z.ZodError) {
         const errorMessage = error.issues
-          .map((err: any) => `${err.path.join('.')}: ${err.message}`)
+          .map((err: z.ZodIssue) => `${err.path.join('.')}: ${err.message}`)
           .join(', ')
         logger.warn('Validation error:', errorMessage)
         return { success: false, error: errorMessage }

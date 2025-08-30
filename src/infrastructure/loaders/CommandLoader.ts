@@ -107,13 +107,16 @@ export class CommandLoader {
     }
   }
 
-  private isValidCommand(command: any): command is Command {
+  private isValidCommand(command: unknown): command is Command {
     return (
       command &&
       typeof command === 'object' &&
-      command.data &&
-      typeof command.data.name === 'string' &&
-      typeof command.execute === 'function'
+      command !== null &&
+      'data' in command &&
+      'execute' in command &&
+      typeof (command as { data?: { name?: unknown }; execute?: unknown }).data?.name ===
+        'string' &&
+      typeof (command as { data?: { name?: unknown }; execute?: unknown }).execute === 'function'
     )
   }
 

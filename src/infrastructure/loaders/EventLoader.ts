@@ -118,12 +118,15 @@ export class EventLoader {
     }
   }
 
-  private isValidEvent(event: any): event is Event {
+  private isValidEvent(event: unknown): event is Event {
     return (
       event &&
       typeof event === 'object' &&
-      typeof event.name === 'string' &&
-      typeof event.execute === 'function'
+      event !== null &&
+      'name' in event &&
+      'execute' in event &&
+      typeof (event as { name?: unknown; execute?: unknown }).name === 'string' &&
+      typeof (event as { name?: unknown; execute?: unknown }).execute === 'function'
     )
   }
 }

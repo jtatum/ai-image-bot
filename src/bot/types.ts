@@ -9,7 +9,7 @@ export interface Command {
 export interface Event {
   name: string
   once?: boolean
-  execute: (...args: any[]) => Promise<void>
+  execute: (...args: unknown[]) => Promise<void>
 }
 
 export interface ExtendedClient extends Client {

@@ -38,8 +38,8 @@ export class RateLimiter {
     try {
       await this.globalLimiter.consume(`global_${userId}`)
       return { allowed: true }
-    } catch (rateLimiterRes: any) {
-      const msBeforeNext = rateLimiterRes.msBeforeNext || 0
+    } catch (rateLimiterRes: unknown) {
+      const msBeforeNext = (rateLimiterRes as { msBeforeNext?: number })?.msBeforeNext || 0
       logger.warn(`Global rate limit exceeded for user ${userId}. Reset in ${msBeforeNext}ms`)
       return { allowed: false, msBeforeNext }
     }
@@ -57,8 +57,8 @@ export class RateLimiter {
     try {
       await limiter.consume(`${commandName}_${userId}`)
       return { allowed: true }
-    } catch (rateLimiterRes: any) {
-      const msBeforeNext = rateLimiterRes.msBeforeNext || 0
+    } catch (rateLimiterRes: unknown) {
+      const msBeforeNext = (rateLimiterRes as { msBeforeNext?: number })?.msBeforeNext || 0
       logger.warn(
         `Command rate limit exceeded for ${commandName} by user ${userId}. Reset in ${msBeforeNext}ms`
       )
@@ -93,8 +93,14 @@ export class RateLimiter {
     return { allowed: true }
   }
 
-  public getStats(): { global: any; commands: Record<string, any> } {
-    const commandStats: Record<string, any> = {}
+  public getStats(): {
+    global: { points: number; duration: number; blockDuration: number }
+    commands: Record<string, { points: number; duration: number; blockDuration: number }>
+  } {
+    const commandStats: Record<
+      string,
+      { points: number; duration: number; blockDuration: number }
+    > = {}
 
     for (const [name, limiter] of this.commandLimiters.entries()) {
       commandStats[name] = {

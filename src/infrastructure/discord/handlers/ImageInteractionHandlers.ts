@@ -302,8 +302,8 @@ export class ImageInteractionHandlers {
    */
   private buildSuccessResponse(
     type: 'regenerated' | 'edited',
-    result: any,
-    interaction: any,
+    result: { imageResult: { data: Buffer; metadata?: { processingTime?: number } } },
+    interaction: ButtonInteraction | ModalSubmitInteraction,
     prompt: string
   ) {
     const typeEmojis = { regenerated: '🎨', edited: '✏️' }

@@ -43,6 +43,7 @@ let config: Environment
 try {
   config = environmentSchema.parse(process.env)
 } catch (error) {
+  // eslint-disable-next-line no-console
   console.error('❌ Invalid environment configuration:', error)
   process.exit(1)
 }

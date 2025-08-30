@@ -41,7 +41,7 @@ export async function deployCommands(guildId?: string): Promise<void> {
 
     logger.info(`🔄 Deploying ${commands.length} commands...`)
 
-    let data: any
+    let data: { length: number }
     if (guildId) {
       // Deploy to specific guild (faster for development)
       data = await rest.put(Routes.applicationGuildCommands(config.CLIENT_ID, guildId), {
