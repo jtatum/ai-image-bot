@@ -24,12 +24,12 @@ export class BasePathResolver implements PathResolver {
 
 export class CommandPathResolver extends BasePathResolver {
   public getModulesPath(): string {
-    return this.resolvePath('..', '..', 'presentation', 'commands', 'implementations')
+    return this.resolvePath('..', '..', '..', 'presentation', 'commands', 'implementations')
   }
 }
 
 export class EventPathResolver extends BasePathResolver {
   public getModulesPath(): string {
-    return this.resolvePath('..', '..', 'presentation', 'events', 'implementations')
+    return this.resolvePath('..', '..', '..', 'presentation', 'events', 'implementations')
   }
 }
