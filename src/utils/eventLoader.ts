@@ -29,6 +29,7 @@ export class EventLoader {
   private client: ExtendedClient
   private eventsPath: string
   private useNewArchitecture: boolean
+  private validationFailures: string[] = []
 
   constructor(client: ExtendedClient, pathResolver?: PathResolver | string) {
     this.client = client
@@ -61,6 +62,14 @@ export class EventLoader {
     }
   }
 
+  public getValidationFailures(): string[] {
+    return [...this.validationFailures]
+  }
+
+  public hasValidationFailures(): boolean {
+    return this.validationFailures.length > 0
+  }
+
   private getEventFiles(): string[] {
     try {
       return readdirSync(this.eventsPath)
@@ -80,12 +89,18 @@ export class EventLoader {
       let event: Event
       if (this.useNewArchitecture) {
         // New architecture: expect a class that needs to be instantiated
-        const EventClass = eventModule.default || eventModule
+        const EventClass = eventModule.default || eventModule[Object.keys(eventModule)[0]]
         if (typeof EventClass === 'function') {
           const eventInstance = new EventClass()
+
+          // Initialize the event if it has an initialize method
+          if (typeof eventInstance.initialize === 'function') {
+            eventInstance.initialize(this.client)
+          }
+
           event = {
             name: eventInstance.name,
-            execute: eventInstance.execute?.bind(eventInstance),
+            execute: eventInstance.execute.bind(eventInstance),
             once: eventInstance.once,
           }
         } else {
@@ -98,6 +113,7 @@ export class EventLoader {
 
       if (!this.isValidEvent(event)) {
         logger.warn(`Invalid event structure in file: ${filePath}`)
+        this.validationFailures.push(filePath)
         return
       }
 

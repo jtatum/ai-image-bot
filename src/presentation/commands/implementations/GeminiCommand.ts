@@ -6,11 +6,11 @@ import {
   ButtonBuilder,
   ButtonStyle,
 } from 'discord.js'
-import { BaseCommand } from '@/presentation/commands/base/BaseCommand.js'
-import { GenerateImageUseCase } from '@/application/use-cases/GenerateImageUseCase.js'
-import { GeminiAdapter } from '@/infrastructure/google/GeminiAdapter.js'
-import { ImageRequest } from '@/domain/entities/ImageRequest.js'
-import { config } from '@/config/environment.js'
+import { BaseCommand } from '../base/BaseCommand.js'
+import { GenerateImageUseCase } from '../../../application/use-cases/GenerateImageUseCase.js'
+import { GeminiAdapter } from '../../../infrastructure/google/GeminiAdapter.js'
+import { ImageRequest } from '../../../domain/entities/ImageRequest.js'
+import { config } from '../../../config/environment.js'
 
 /**
  * Discord command for generating AI images using Google Gemini

@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js'
-import { BaseCommand } from '@/presentation/commands/base/BaseCommand.js'
+import { BaseCommand } from '../base/BaseCommand.js'
 
 /**
  * Discord command for checking bot latency and responsiveness

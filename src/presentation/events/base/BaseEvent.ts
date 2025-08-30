@@ -1,5 +1,5 @@
-import { Event } from '@/bot/types.js'
-import logger from '@/config/logger.js'
+import { Event } from '../../../bot/types.js'
+import logger from '../../../config/logger.js'
 
 /**
  * Abstract base class for all Discord event handlers

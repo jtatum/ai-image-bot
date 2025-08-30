@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js'
-import { BaseCommand } from '@/presentation/commands/base/BaseCommand.js'
-import { ExtendedClient } from '@/bot/types.js'
-import { config } from '@/config/environment.js'
+import { BaseCommand } from '../base/BaseCommand.js'
+import { ExtendedClient } from '../../../bot/types.js'
+import { config } from '../../../config/environment.js'
 
 /**
  * Discord command for displaying bot information and statistics

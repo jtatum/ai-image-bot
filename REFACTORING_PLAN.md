@@ -172,6 +172,11 @@ src/
 - [ ] Delete obsolete utility files
 - [ ] Update all imports
 
+#### Step 5.6: More Cleanup
+
+- [ ] Update loaders to remove old loading code.
+- [ ] Remove fixtures for old code.
+
 ### Phase 6: Documentation and Final Validation
 
 **Goal**: Document the new architecture and ensure quality

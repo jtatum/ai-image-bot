@@ -29,6 +29,7 @@ export class CommandLoader {
   private client: ExtendedClient
   private commandsPath: string
   private useNewArchitecture: boolean
+  private validationFailures: string[] = []
 
   constructor(client: ExtendedClient, pathResolver?: PathResolver | string) {
     this.client = client
@@ -61,6 +62,14 @@ export class CommandLoader {
     }
   }
 
+  public getValidationFailures(): string[] {
+    return [...this.validationFailures]
+  }
+
+  public hasValidationFailures(): boolean {
+    return this.validationFailures.length > 0
+  }
+
   private getCommandFiles(): string[] {
     try {
       return readdirSync(this.commandsPath)
@@ -80,12 +89,12 @@ export class CommandLoader {
       let command: Command
       if (this.useNewArchitecture) {
         // New architecture: expect a class that needs to be instantiated
-        const CommandClass = commandModule.default || commandModule
+        const CommandClass = commandModule.default || commandModule[Object.keys(commandModule)[0]]
         if (typeof CommandClass === 'function') {
           const commandInstance = new CommandClass()
           command = {
             data: commandInstance.data,
-            execute: commandInstance.execute?.bind(commandInstance),
+            execute: commandInstance.execute.bind(commandInstance),
             cooldown: commandInstance.cooldown,
           }
         } else {
@@ -98,6 +107,7 @@ export class CommandLoader {
 
       if (!this.isValidCommand(command)) {
         logger.warn(`Invalid command structure in file: ${filePath}`)
+        this.validationFailures.push(filePath)
         return
       }
 
