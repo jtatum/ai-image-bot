@@ -18,7 +18,7 @@ class DefaultPathResolver implements PathResolver {
   }
 
   getCommandsPath(): string {
-    return join(this.baseDir, '..', 'presentation', 'commands', 'implementations')
+    return join(this.baseDir, '..', '..', 'presentation', 'commands', 'implementations')
   }
 }
 
@@ -108,15 +108,20 @@ export class CommandLoader {
   }
 
   private isValidCommand(command: unknown): command is Command {
+    if (!command || typeof command !== 'object' || command === null) {
+      return false
+    }
+
+    const cmd = command as Record<string, unknown>
+
     return (
-      command &&
-      typeof command === 'object' &&
-      command !== null &&
-      'data' in command &&
-      'execute' in command &&
-      typeof (command as { data?: { name?: unknown }; execute?: unknown }).data?.name ===
-        'string' &&
-      typeof (command as { data?: { name?: unknown }; execute?: unknown }).execute === 'function'
+      'data' in cmd &&
+      'execute' in cmd &&
+      typeof cmd.data === 'object' &&
+      cmd.data !== null &&
+      'name' in (cmd.data as Record<string, unknown>) &&
+      typeof (cmd.data as Record<string, unknown>).name === 'string' &&
+      typeof cmd.execute === 'function'
     )
   }
 

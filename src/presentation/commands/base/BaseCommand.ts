@@ -196,7 +196,7 @@ export abstract class BaseCommand implements Command {
       // Determine if interaction was already replied to
       const replyOptions = {
         content: `❌ ${errorMessage}`,
-        ephemeral: true,
+        flags: 64, // MessageFlags.Ephemeral
       }
 
       if (interaction.replied || interaction.deferred) {

@@ -18,7 +18,7 @@ class DefaultPathResolver implements PathResolver {
   }
 
   getEventsPath(): string {
-    return join(this.baseDir, '..', 'presentation', 'events', 'implementations')
+    return join(this.baseDir, '..', '..', 'presentation', 'events', 'implementations')
   }
 }
 
@@ -119,14 +119,17 @@ export class EventLoader {
   }
 
   private isValidEvent(event: unknown): event is Event {
+    if (!event || typeof event !== 'object' || event === null) {
+      return false
+    }
+
+    const evt = event as Record<string, unknown>
+
     return (
-      event &&
-      typeof event === 'object' &&
-      event !== null &&
-      'name' in event &&
-      'execute' in event &&
-      typeof (event as { name?: unknown; execute?: unknown }).name === 'string' &&
-      typeof (event as { name?: unknown; execute?: unknown }).execute === 'function'
+      'name' in evt &&
+      'execute' in evt &&
+      typeof evt.name === 'string' &&
+      typeof evt.execute === 'function'
     )
   }
 }

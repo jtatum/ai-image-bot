@@ -277,16 +277,17 @@ describe('PingCommand', () => {
     })
   })
 
-  describe('WebSocket Validation', () => {
-    it('should validate WebSocket connection exists', async () => {
-      Object.assign(mockInteraction.client.ws, { ping: -1 }) // Simulate no connection
+  describe('Client Ready Validation', () => {
+    it('should validate client is ready', async () => {
+      Object.assign(mockInteraction.client, { readyAt: null }) // Simulate client not ready
 
       await expect(command.execute(mockInteraction)).rejects.toThrow(
-        'WebSocket connection is not established'
+        'Bot is not ready to process commands'
       )
     })
 
-    it('should proceed when WebSocket connection is valid', async () => {
+    it('should proceed when client is ready', async () => {
+      Object.assign(mockInteraction.client, { readyAt: new Date() }) // Client is ready
       Object.assign(mockInteraction.client.ws, { ping: 50 }) // Valid connection
 
       await expect(command.execute(mockInteraction)).resolves.not.toThrow()

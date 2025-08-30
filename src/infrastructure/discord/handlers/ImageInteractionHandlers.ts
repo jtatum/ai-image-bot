@@ -142,7 +142,30 @@ export class ImageInteractionHandlers {
       }
 
       // Build success response using helper method
-      const successResponse = this.buildSuccessResponse('regenerated', result, interaction, prompt)
+      if (!result.imageResult || !result.imageResult.buffer) {
+        logger.error('Image regeneration succeeded but no image result returned')
+        const errorResponse = this.responseBuilder.buildImageErrorResponse({
+          errorMessage: 'Image regeneration failed - no image data returned',
+          contextLabel: 'regeneration',
+          prompt: prompt,
+          userId: interaction.user.id,
+          ephemeral: true,
+        })
+        await interaction.editReply(errorResponse)
+        return
+      }
+
+      const successResponse = this.buildSuccessResponse(
+        'regenerated',
+        {
+          imageResult: {
+            data: result.imageResult.buffer!,
+            metadata: result.imageResult.metadata,
+          },
+        },
+        interaction,
+        prompt
+      )
 
       await interaction.editReply(successResponse)
 
@@ -277,9 +300,27 @@ export class ImageInteractionHandlers {
       }
 
       // Build success response using helper method
+      if (!result.imageResult || !result.imageResult.buffer) {
+        logger.error('Image editing succeeded but no image result returned')
+        const errorResponse = this.responseBuilder.buildImageErrorResponse({
+          errorMessage: 'Image editing failed - no image data returned',
+          contextLabel: 'editing',
+          prompt: editDescription,
+          userId: interaction.user.id,
+          ephemeral: true,
+        })
+        await interaction.editReply(errorResponse)
+        return
+      }
+
       const successResponse = this.buildSuccessResponse(
         'edited',
-        result,
+        {
+          imageResult: {
+            data: result.imageResult.buffer!,
+            metadata: result.imageResult.metadata,
+          },
+        },
         interaction,
         editDescription
       )
@@ -315,7 +356,11 @@ export class ImageInteractionHandlers {
     const content = `${typeEmojis[type]} **${interaction.user.username}** ${typeLabels[type]} an image${timeText}\n> ${prompt}`
 
     const attachment = this.responseBuilder.createImageAttachment(
-      result.imageResult,
+      {
+        success: true,
+        buffer: result.imageResult.data,
+        metadata: result.imageResult.metadata,
+      },
       interaction.user.username,
       prompt,
       { prefix: type === 'edited' ? 'edited' : '' }

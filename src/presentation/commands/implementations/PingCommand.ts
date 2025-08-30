@@ -127,9 +127,9 @@ export class PingCommand extends BaseCommand {
   protected async validateExecution(interaction: ChatInputCommandInteraction): Promise<void> {
     await super.validateExecution(interaction)
 
-    // Check WebSocket connection
-    if (interaction.client.ws.ping === -1) {
-      throw new Error('WebSocket connection is not established')
+    // Check if client is ready (WebSocket ping of -1 is normal before first measurement)
+    if (interaction.client.readyAt === null) {
+      throw new Error('Bot is not ready to process commands')
     }
   }
 

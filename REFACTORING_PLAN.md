@@ -189,7 +189,6 @@ src/
 #### Step 6.1: Update Documentation
 
 - [ ] Update README.md with new architecture
-- [ ] Update CLAUDE.md with new patterns
 - [ ] Add architecture diagram
 - [ ] Document new testing patterns
 
