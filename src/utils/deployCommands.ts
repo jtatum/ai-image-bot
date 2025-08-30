@@ -1,58 +1,44 @@
 import { REST, Routes } from 'discord.js'
-import { readdirSync } from 'fs'
+import { Collection } from 'discord.js'
 import { pathToFileURL } from 'url'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { config } from '@/shared/config/environment.js'
 import logger from '@/infrastructure/monitoring/Logger.js'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+import { CommandLoader } from '@/infrastructure/loaders/index.js'
+import { ExtendedClient } from '@/bot/types.js'
 
 export async function deployCommands(guildId?: string): Promise<void> {
-  const commands = []
-  const commandsPath = join(__dirname, '..', 'presentation', 'commands', 'implementations')
-
   try {
-    const commandFiles = readdirSync(commandsPath).filter(
-      file =>
-        (file.endsWith('.ts') || file.endsWith('.js')) &&
-        !file.endsWith('.d.ts') &&
-        file !== 'index.ts' &&
-        file !== 'index.js'
-    )
+    // Create a mock client to collect commands
+    const mockClient = {
+      commands: new Collection(),
+    } as ExtendedClient
 
-    for (const file of commandFiles) {
-      const filePath = join(commandsPath, file)
-      const fileURL = pathToFileURL(filePath).href
+    // Use CommandLoader to load all commands with explicit path
+    const __filename = fileURLToPath(import.meta.url)
+    const __dirname = dirname(__filename)
+    const commandsPath = join(__dirname, '..', 'presentation', 'commands', 'implementations')
 
-      try {
-        const commandModule = await import(fileURL)
-        // New architecture: expect a class that needs to be instantiated
-        const CommandClass = commandModule.default || commandModule[Object.keys(commandModule)[0]]
-        let command
+    const loader = new CommandLoader(mockClient, commandsPath)
+    await loader.loadCommands()
 
-        if (typeof CommandClass === 'function') {
-          const commandInstance = new CommandClass()
-          command = {
-            data: commandInstance.data,
-            execute: commandInstance.execute.bind(commandInstance),
-            cooldown: commandInstance.cooldown,
-          }
-        } else {
-          command = CommandClass
-        }
-
-        if (command && command.data && typeof command.data.toJSON === 'function') {
-          commands.push(command.data.toJSON())
-          logger.debug(`Loaded command: ${command.data.name}`)
-        } else {
-          logger.warn(`Invalid command structure in file: ${file}`)
-        }
-      } catch (error) {
-        logger.error(`Failed to load command from ${file}:`, error)
-      }
+    // Check for validation failures
+    if (loader.hasValidationFailures()) {
+      const failures = loader.getValidationFailures()
+      logger.warn(`Found ${failures.length} invalid command files:`, failures)
     }
+
+    // Extract command data for deployment
+    const commands = Array.from(mockClient.commands.values())
+      .map(command => {
+        if (command.data && typeof command.data.toJSON === 'function') {
+          return command.data.toJSON()
+        }
+        logger.warn(`Command ${command.data?.name || 'unknown'} has invalid data structure`)
+        return null
+      })
+      .filter(Boolean) // Remove null entries
 
     const rest = new REST().setToken(config.DISCORD_TOKEN)
 
