@@ -5,10 +5,10 @@ import { GeminiCommand } from '@/presentation/commands/implementations/GeminiCom
 import { GenerateImageUseCase } from '@/application/use-cases/GenerateImageUseCase.js'
 import { GeminiAdapter } from '@/infrastructure/google/GeminiAdapter.js'
 import { ImageRequest } from '@/domain/entities/ImageRequest.js'
-import logger from '@/config/logger.js'
+import logger from '@/infrastructure/monitoring/Logger.js'
 
 // Mock logger
-jest.mock('@/config/logger.js', () => ({
+jest.mock('@/infrastructure/monitoring/Logger.js', () => ({
   __esModule: true,
   default: {
     child: jest.fn(() => ({
@@ -25,7 +25,7 @@ jest.mock('@/config/logger.js', () => ({
 }))
 
 // Mock config
-jest.mock('@/config/environment.js', () => ({
+jest.mock('@/shared/config/environment.js', () => ({
   config: {
     COMMAND_COOLDOWN_SECONDS: 30,
   },

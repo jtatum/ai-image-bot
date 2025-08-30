@@ -1,7 +1,7 @@
 import express from 'express'
 import { Server } from 'http'
-import { config } from '@/config/environment.js'
-import logger from '@/config/logger.js'
+import { config } from '@/shared/config/environment.js'
+import logger from '@/infrastructure/monitoring/Logger.js'
 import { ExtendedClient } from '@/bot/types.js'
 
 export class HealthCheckService {

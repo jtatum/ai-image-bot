@@ -1,13 +1,13 @@
 import 'reflect-metadata'
 import { DiscordClient } from '@/bot/client.js'
-import { CommandLoader } from '@/utils/commandLoader.js'
-import { EventLoader } from '@/utils/eventLoader.js'
-import { HealthCheckService } from '@/services/healthCheck.js'
-import { GracefulShutdown } from '@/utils/gracefulShutdown.js'
-import { RateLimiter } from '@/utils/rateLimiter.js'
+import { CommandLoader } from '@/infrastructure/loaders/CommandLoader.js'
+import { EventLoader } from '@/infrastructure/loaders/EventLoader.js'
+import { HealthCheckService } from '@/infrastructure/monitoring/HealthCheck.js'
+import { GracefulShutdown } from '@/infrastructure/monitoring/GracefulShutdown.js'
+import { RateLimiter } from '@/shared/utils/rateLimiter.js'
 import { ExtendedClient } from '@/bot/types.js'
-import logger from '@/config/logger.js'
-import { config } from '@/config/environment.js'
+import logger from '@/infrastructure/monitoring/Logger.js'
+import { config } from '@/shared/config/environment.js'
 
 class GeminiBot {
   private client: DiscordClient

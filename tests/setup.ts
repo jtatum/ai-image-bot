@@ -347,7 +347,7 @@ jest.mock('@/bot/client.js', () => ({
 }))
 
 // Mock logger globally - must be before any imports that use it
-jest.mock('@/config/logger.js', () => ({
+jest.mock('@/infrastructure/monitoring/Logger.js', () => ({
   __esModule: true,
   default: {
     info: jest.fn(),

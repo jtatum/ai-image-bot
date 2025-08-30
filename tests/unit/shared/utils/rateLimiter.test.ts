@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from '@jest/globals'
-import { RateLimiter } from '@/utils/rateLimiter'
+import { RateLimiter } from '@/shared/utils/rateLimiter'
 
 describe('RateLimiter', () => {
   let rateLimiter: RateLimiter

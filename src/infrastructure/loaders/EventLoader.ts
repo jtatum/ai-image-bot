@@ -3,11 +3,10 @@ import { pathToFileURL } from 'url'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { Event, ExtendedClient } from '@/bot/types.js'
-import logger from '@/config/logger.js'
-import { config } from '@/config/environment.js'
+import logger from '@/infrastructure/monitoring/Logger.js'
 
 export interface PathResolver {
-  getEventsPath(useNewArchitecture: boolean): string
+  getEventsPath(): string
 }
 
 class DefaultPathResolver implements PathResolver {
@@ -18,22 +17,18 @@ class DefaultPathResolver implements PathResolver {
     this.baseDir = dirname(__filename)
   }
 
-  getEventsPath(useNewArchitecture: boolean): string {
-    return useNewArchitecture
-      ? join(this.baseDir, '..', 'presentation', 'events', 'implementations')
-      : join(this.baseDir, '..', 'events')
+  getEventsPath(): string {
+    return join(this.baseDir, '..', 'presentation', 'events', 'implementations')
   }
 }
 
 export class EventLoader {
   private client: ExtendedClient
   private eventsPath: string
-  private useNewArchitecture: boolean
   private validationFailures: string[] = []
 
   constructor(client: ExtendedClient, pathResolver?: PathResolver | string) {
     this.client = client
-    this.useNewArchitecture = config.USE_NEW_ARCHITECTURE
 
     if (typeof pathResolver === 'string') {
       // Custom path provided directly (for testing)
@@ -41,7 +36,7 @@ export class EventLoader {
     } else {
       // Use path resolver (for production or testing with custom resolver)
       const resolver = pathResolver || new DefaultPathResolver()
-      this.eventsPath = resolver.getEventsPath(this.useNewArchitecture)
+      this.eventsPath = resolver.getEventsPath()
     }
   }
 
@@ -53,9 +48,7 @@ export class EventLoader {
         await this.loadEvent(file)
       }
 
-      logger.info(
-        `✅ Loaded ${eventFiles.length} events from ${this.useNewArchitecture ? 'new' : 'old'} architecture`
-      )
+      logger.info(`✅ Loaded ${eventFiles.length} events`)
     } catch (error) {
       logger.error('Failed to load events:', error)
       throw error
@@ -86,29 +79,25 @@ export class EventLoader {
       const fileURL = pathToFileURL(filePath).href
       const eventModule = await import(fileURL)
 
+      // New architecture: expect a class that needs to be instantiated
+      const EventClass = eventModule.default || eventModule[Object.keys(eventModule)[0]]
       let event: Event
-      if (this.useNewArchitecture) {
-        // New architecture: expect a class that needs to be instantiated
-        const EventClass = eventModule.default || eventModule[Object.keys(eventModule)[0]]
-        if (typeof EventClass === 'function') {
-          const eventInstance = new EventClass()
 
-          // Initialize the event if it has an initialize method
-          if (typeof eventInstance.initialize === 'function') {
-            eventInstance.initialize(this.client)
-          }
+      if (typeof EventClass === 'function') {
+        const eventInstance = new EventClass()
 
-          event = {
-            name: eventInstance.name,
-            execute: eventInstance.execute.bind(eventInstance),
-            once: eventInstance.once,
-          }
-        } else {
-          event = EventClass
+        // Initialize the event if it has an initialize method
+        if (typeof eventInstance.initialize === 'function') {
+          eventInstance.initialize(this.client)
+        }
+
+        event = {
+          name: eventInstance.name,
+          execute: eventInstance.execute.bind(eventInstance),
+          once: eventInstance.once,
         }
       } else {
-        // Old architecture: expect a plain object
-        event = eventModule.default || eventModule
+        event = EventClass
       }
 
       if (!this.isValidEvent(event)) {
@@ -123,9 +112,7 @@ export class EventLoader {
         this.client.on(event.name, (...args) => event.execute(...args))
       }
 
-      logger.debug(
-        `Loaded event: ${event.name} (${this.useNewArchitecture ? 'new' : 'old'} architecture)`
-      )
+      logger.debug(`Loaded event: ${event.name}`)
     } catch (error) {
       logger.error(`Failed to load event from ${filePath}:`, error)
     }

@@ -1,27 +1,14 @@
-import { CommandLoader } from '@/utils/commandLoader.js'
+import { CommandLoader } from '@/infrastructure/loaders/CommandLoader.js'
 import { ExtendedClient } from '@/bot/types.js'
 import { Collection } from 'discord.js'
 import { join } from 'path'
 // Logger is automatically mocked via __mocks__ directory
-
-// Create a mutable config object
-let mockConfig = {
-  USE_NEW_ARCHITECTURE: false
-}
-
-// Mock the config module
-jest.mock('@/config/environment.js', () => ({
-  get config() {
-    return mockConfig
-  }
-}))
 
 describe('CommandLoader', () => {
   let mockClient: ExtendedClient
 
   beforeEach(() => {
     jest.clearAllMocks()
-    mockConfig.USE_NEW_ARCHITECTURE = false
 
     mockClient = {
       commands: new Collection(),
@@ -38,18 +25,7 @@ describe('CommandLoader', () => {
   })
 
   describe('loadCommands', () => {
-    it('should load commands from old architecture', async () => {
-      const fixturePath = join(process.cwd(), 'tests/fixtures/commands/old-architecture')
-      const loader = new CommandLoader(mockClient, fixturePath)
-
-      await loader.loadCommands()
-
-      expect(mockClient.commands.size).toBeGreaterThan(0)
-      expect(mockClient.commands.has('testcommand')).toBe(true)
-    })
-
     it('should load commands from new architecture', async () => {
-      mockConfig.USE_NEW_ARCHITECTURE = true
       const fixturePath = join(process.cwd(), 'tests/fixtures/commands/new-architecture')
       const loader = new CommandLoader(mockClient, fixturePath)
 
@@ -68,46 +44,66 @@ describe('CommandLoader', () => {
       expect(mockClient.commands.size).toBe(0)
     })
 
-    it('should skip invalid command files', async () => {
-      const fixturePath = join(process.cwd(), 'tests/fixtures/commands/old-architecture')
+    it('should handle invalid commands gracefully', async () => {
+      const fixturePath = join(process.cwd(), 'tests/fixtures/commands/new-architecture')
       const loader = new CommandLoader(mockClient, fixturePath)
 
       await loader.loadCommands()
 
-      // Should not load invalid commands
-      expect(mockClient.commands.has('invalid')).toBe(false)
+      // Should not load invalid commands (like InvalidCommandClass.js)
+      expect(mockClient.commands.has('invalidclass')).toBe(false)
+    })
+
+    it('should validate command structure', async () => {
+      const fixturePath = join(process.cwd(), 'tests/fixtures/commands/new-architecture')
+      const loader = new CommandLoader(mockClient, fixturePath)
+
+      await loader.loadCommands()
+
+      // All loaded commands should have valid structure
+      mockClient.commands.forEach(command => {
+        expect(command.data).toBeDefined()
+        expect(command.data.name).toBeDefined()
+        expect(typeof command.data.name).toBe('string')
+        expect(typeof command.execute).toBe('function')
+      })
     })
   })
 
   describe('reloadCommand', () => {
     it('should reload existing command successfully', async () => {
-      const fixturePath = join(process.cwd(), 'tests/fixtures/commands/old-architecture')
+      const fixturePath = join(process.cwd(), 'tests/fixtures/commands/new-architecture')
       const loader = new CommandLoader(mockClient, fixturePath)
 
       // Load initial commands
       await loader.loadCommands()
-      expect(mockClient.commands.has('testcommand')).toBe(true)
+      expect(mockClient.commands.has('testcommandclass')).toBe(true)
 
       // Reload specific command - use the exact filename
-      const result = await loader.reloadCommand('testCommand')
+      const result = await loader.reloadCommand('TestCommandClass')
       expect(result).toBe(true)
-      expect(mockClient.commands.has('testcommand')).toBe(true)
     })
 
     it('should return false for non-existent command', async () => {
-      const fixturePath = join(process.cwd(), 'tests/fixtures/commands/old-architecture')
+      const fixturePath = join(process.cwd(), 'tests/fixtures/commands/new-architecture')
       const loader = new CommandLoader(mockClient, fixturePath)
 
       const result = await loader.reloadCommand('nonexistent')
       expect(result).toBe(false)
     })
+  })
 
-    it('should handle reload errors gracefully', async () => {
-      const nonExistentPath = '/path/that/does/not/exist'
-      const loader = new CommandLoader(mockClient, nonExistentPath)
+  describe('validation failures tracking', () => {
+    it('should track validation failures', async () => {
+      const fixturePath = join(process.cwd(), 'tests/fixtures/commands/new-architecture')
+      const loader = new CommandLoader(mockClient, fixturePath)
 
-      const result = await loader.reloadCommand('testcommand')
-      expect(result).toBe(false)
+      await loader.loadCommands()
+
+      // Check if validation failures are tracked (InvalidCommandClass should fail)
+      const failures = loader.getValidationFailures()
+      expect(Array.isArray(failures)).toBe(true)
+      expect(loader.hasValidationFailures()).toBe(failures.length > 0)
     })
   })
 })

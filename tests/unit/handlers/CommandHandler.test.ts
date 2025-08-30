@@ -6,13 +6,13 @@ import { Command, ExtendedClient } from '@/bot/types.js'
 import { createMockChatInputInteraction } from '../../helpers/mockInteractions.js'
 import { mockCommand } from '../../fixtures/mockCommand.js'
 
-jest.mock('@/config/logger.js', () => ({
+jest.mock('@/infrastructure/monitoring/Logger.js', () => ({
   info: jest.fn(),
   warn: jest.fn(),
   error: jest.fn(),
 }))
 
-import logger from '@/config/logger.js'
+import logger from '@/infrastructure/monitoring/Logger.js'
 const mockLogger = logger as jest.Mocked<typeof logger>
 
 describe('CommandHandler', () => {

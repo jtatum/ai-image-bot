@@ -1,6 +1,6 @@
 import { IImageGenerator, IImageResult } from '@/domain/interfaces/IImageGenerator.js'
 import { ImageRequest } from '@/domain/entities/ImageRequest.js'
-import logger from '@/config/logger.js'
+import logger from '@/infrastructure/monitoring/Logger.js'
 import { Buffer } from 'node:buffer'
 
 /**

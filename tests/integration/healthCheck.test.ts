@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals'
 import request from 'supertest'
-import { HealthCheckService } from '@/services/healthCheck'
+import { HealthCheckService } from '@/infrastructure/monitoring/HealthCheck'
 import { DiscordClient } from '@/bot/client'
 
 describe('HealthCheck Service', () => {

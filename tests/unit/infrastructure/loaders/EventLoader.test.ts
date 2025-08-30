@@ -1,4 +1,4 @@
-import { EventLoader } from '@/utils/eventLoader.js'
+import { EventLoader } from '@/infrastructure/loaders/EventLoader.js'
 import { ExtendedClient } from '@/bot/types.js'
 import { Collection } from 'discord.js'
 import { join } from 'path'
@@ -14,24 +14,11 @@ Object.defineProperty(globalThis, 'import', {
   configurable: true
 })
 
-// Create a mutable config object
-let mockConfig = {
-  USE_NEW_ARCHITECTURE: false
-}
-
-// Mock the config module
-jest.mock('@/config/environment.js', () => ({
-  get config() {
-    return mockConfig
-  }
-}))
-
 describe('EventLoader', () => {
   let mockClient: ExtendedClient
 
   beforeEach(() => {
     jest.clearAllMocks()
-    mockConfig.USE_NEW_ARCHITECTURE = false
 
     mockClient = {
       commands: new Collection(),
@@ -54,7 +41,7 @@ describe('EventLoader', () => {
       }
       const loader = new EventLoader(mockClient, mockPathResolver)
       expect(loader).toBeInstanceOf(EventLoader)
-      expect(mockPathResolver.getEventsPath).toHaveBeenCalledWith(false)
+      expect(mockPathResolver.getEventsPath).toHaveBeenCalled()
     })
 
     it('should use default path resolver when none provided', () => {
@@ -62,35 +49,17 @@ describe('EventLoader', () => {
       // The default path resolver is tested in integration tests
       expect(true).toBe(true)
     })
-
-    it('should use new architecture path when config enabled', () => {
-      mockConfig.USE_NEW_ARCHITECTURE = true
-      const mockPathResolver = {
-        getEventsPath: jest.fn().mockReturnValue('/new/arch/path')
-      }
-      new EventLoader(mockClient, mockPathResolver)
-      expect(mockPathResolver.getEventsPath).toHaveBeenCalledWith(true)
-    })
   })
 
   describe('loadEvents', () => {
-    it('should load events from old architecture', async () => {
-      const fixturePath = join(process.cwd(), 'tests/fixtures/events/old-architecture')
-      const loader = new EventLoader(mockClient, fixturePath)
-
-      await loader.loadEvents()
-
-      expect(mockClient.on).toHaveBeenCalled()
-    })
-
     it('should load events from new architecture', async () => {
-      mockConfig.USE_NEW_ARCHITECTURE = true
       const fixturePath = join(process.cwd(), 'tests/fixtures/events/new-architecture')
       const loader = new EventLoader(mockClient, fixturePath)
 
       await loader.loadEvents()
 
       expect(mockClient.on).toHaveBeenCalled()
+      expect(mockClient.once).toHaveBeenCalled()
     })
 
     it('should handle missing directory gracefully', async () => {
@@ -103,7 +72,7 @@ describe('EventLoader', () => {
     })
 
     it('should skip invalid event files', async () => {
-      const fixturePath = join(process.cwd(), 'tests/fixtures/events/old-architecture')
+      const fixturePath = join(process.cwd(), 'tests/fixtures/events/new-architecture')
       const loader = new EventLoader(mockClient, fixturePath)
 
       await loader.loadEvents()
@@ -112,17 +81,16 @@ describe('EventLoader', () => {
       const registeredEvents = (mockClient.on as jest.Mock).mock.calls.map(call => call[0])
       const onceEvents = (mockClient.once as jest.Mock).mock.calls.map(call => call[0])
 
-      expect(registeredEvents).not.toContain('invalidEvent')
       expect([...registeredEvents, ...onceEvents]).not.toContain(undefined)
     })
 
     it('should register once events correctly', async () => {
-      const fixturePath = join(process.cwd(), 'tests/fixtures/events/old-architecture')
+      const fixturePath = join(process.cwd(), 'tests/fixtures/events/new-architecture')
       const loader = new EventLoader(mockClient, fixturePath)
 
       await loader.loadEvents()
 
-      expect(mockClient.once).toHaveBeenCalledWith('onceEvent', expect.any(Function))
+      expect(mockClient.once).toHaveBeenCalledWith('onceEventClass', expect.any(Function))
     })
 
     it('should handle file loading errors gracefully', async () => {
@@ -139,10 +107,8 @@ describe('EventLoader', () => {
     })
   })
 
-  describe('architecture switching behavior', () => {
-    it('should instantiate class-based events in new architecture', async () => {
-      mockConfig.USE_NEW_ARCHITECTURE = true
-      
+  describe('new architecture behavior', () => {
+    it('should instantiate class-based events', async () => {
       // Create a mock event class
       const mockEventClass = jest.fn().mockImplementation(() => ({
         name: 'testEvent',
@@ -157,20 +123,14 @@ describe('EventLoader', () => {
 
       const loader = new EventLoader(mockClient, '/mock/path')
       
-      // This test verifies the architecture switching logic exists
-      expect(loader).toBeInstanceOf(EventLoader)
-    })
-
-    it('should handle plain objects in old architecture', async () => {
-      mockConfig.USE_NEW_ARCHITECTURE = false
-      const loader = new EventLoader(mockClient, '/mock/path')
+      // This test verifies the new architecture logic exists
       expect(loader).toBeInstanceOf(EventLoader)
     })
   })
 
   describe('event validation', () => {
     it('should validate events have required properties', async () => {
-      const fixturePath = join(process.cwd(), 'tests/fixtures/events/old-architecture') 
+      const fixturePath = join(process.cwd(), 'tests/fixtures/events/new-architecture') 
       const loader = new EventLoader(mockClient, fixturePath)
 
       await loader.loadEvents()

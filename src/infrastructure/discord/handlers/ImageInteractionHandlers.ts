@@ -1,6 +1,6 @@
 import { ButtonInteraction, ModalSubmitInteraction } from 'discord.js'
 import { Buffer } from 'node:buffer'
-import logger from '@/config/logger.js'
+import logger from '@/infrastructure/monitoring/Logger.js'
 import { GenerateImageUseCase } from '@/application/use-cases/GenerateImageUseCase.js'
 import { EditImageUseCase } from '@/application/use-cases/EditImageUseCase.js'
 import { RegenerateImageUseCase } from '@/application/use-cases/RegenerateImageUseCase.js'

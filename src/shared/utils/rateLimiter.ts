@@ -1,6 +1,6 @@
 import { RateLimiterMemory } from 'rate-limiter-flexible'
-import { config } from '@/config/environment.js'
-import logger from '@/config/logger.js'
+import { config } from '@/shared/config/environment.js'
+import logger from '@/infrastructure/monitoring/Logger.js'
 
 export class RateLimiter {
   private globalLimiter: RateLimiterMemory

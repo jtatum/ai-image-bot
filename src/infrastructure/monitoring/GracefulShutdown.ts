@@ -1,6 +1,6 @@
 import { ExtendedClient } from '@/bot/types.js'
-import { HealthCheckService } from '@/services/healthCheck.js'
-import logger from '@/config/logger.js'
+import { HealthCheckService } from '@/infrastructure/monitoring/HealthCheck.js'
+import logger from '@/infrastructure/monitoring/Logger.js'
 
 export class GracefulShutdown {
   private client: ExtendedClient

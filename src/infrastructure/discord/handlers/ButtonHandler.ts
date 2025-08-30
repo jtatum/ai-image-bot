@@ -1,5 +1,5 @@
 import { ButtonInteraction, ActionRowBuilder, ButtonBuilder } from 'discord.js'
-import logger from '@/config/logger.js'
+import logger from '@/infrastructure/monitoring/Logger.js'
 import {
   EnhancedButtonBuilder,
   ActionButtonOptions,

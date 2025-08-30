@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js'
 import { Command } from '../../../bot/types.js'
-import logger from '../../../config/logger.js'
+import logger from '@/infrastructure/monitoring/Logger.js'
 
 /**
  * Abstract base class for all Discord slash commands

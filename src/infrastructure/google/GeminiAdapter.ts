@@ -1,7 +1,7 @@
 import { GoogleGenAI, HarmCategory, HarmBlockThreshold, type SafetySetting } from '@google/genai'
 import { IImageGenerator, IImageResult } from '@/domain/interfaces/IImageGenerator.js'
-import { config } from '@/config/environment.js'
-import logger from '@/config/logger.js'
+import { config } from '@/shared/config/environment.js'
+import logger from '@/infrastructure/monitoring/Logger.js'
 import { Buffer } from 'node:buffer'
 
 /**

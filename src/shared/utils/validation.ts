@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import logger from '@/config/logger.js'
+import logger from '@/infrastructure/monitoring/Logger.js'
 
 export class ValidationUtils {
   // Discord-specific validation schemas

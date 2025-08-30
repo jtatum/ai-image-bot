@@ -10,7 +10,7 @@ import { BaseCommand } from '../base/BaseCommand.js'
 import { GenerateImageUseCase } from '../../../application/use-cases/GenerateImageUseCase.js'
 import { GeminiAdapter } from '../../../infrastructure/google/GeminiAdapter.js'
 import { ImageRequest } from '../../../domain/entities/ImageRequest.js'
-import { config } from '../../../config/environment.js'
+import { config } from '@/shared/config/environment.js'
 
 /**
  * Discord command for generating AI images using Google Gemini

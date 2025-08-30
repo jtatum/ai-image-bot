@@ -1,27 +1,14 @@
-import { CommandLoader } from '@/utils/commandLoader.js'
+import { CommandLoader } from '@/infrastructure/loaders/CommandLoader.js'
 import { ExtendedClient } from '@/bot/types.js'
 import { Collection } from 'discord.js'
 import { join } from 'path'
 // Logger is automatically mocked via __mocks__ directory
-
-// Create a mutable config object
-let mockConfig = {
-  USE_NEW_ARCHITECTURE: false
-}
-
-// Mock the config module
-jest.mock('@/config/environment.js', () => ({
-  get config() {
-    return mockConfig
-  }
-}))
 
 describe('CommandLoader with Real Fixtures', () => {
   let mockClient: ExtendedClient
 
   beforeEach(() => {
     jest.clearAllMocks()
-    mockConfig.USE_NEW_ARCHITECTURE = false
 
     mockClient = {
       commands: new Collection(),
@@ -29,28 +16,8 @@ describe('CommandLoader with Real Fixtures', () => {
     } as any
   })
 
-  it('should load old architecture commands from real fixture files', async () => {
-    const fixturePath = join(process.cwd(), 'tests/fixtures/commands/old-architecture')
-    const loader = new CommandLoader(mockClient, fixturePath)
-
-    await loader.loadCommands()
-
-    // Should load valid commands
-    expect(mockClient.commands.has('testcommand')).toBe(true)
-    
-    const loadedCommand = mockClient.commands.get('testcommand')
-    expect(loadedCommand).toBeDefined()
-    expect(loadedCommand?.data.name).toBe('testcommand')
-    expect(loadedCommand?.cooldown).toBe(5)
-    expect(typeof loadedCommand?.execute).toBe('function')
-
-    // Should not load invalid commands
-    expect(mockClient.commands.has('invalid')).toBe(false)
-  })
 
   it('should load new architecture commands from real fixture files', async () => {
-    mockConfig.USE_NEW_ARCHITECTURE = true
-
     const fixturePath = join(process.cwd(), 'tests/fixtures/commands/new-architecture')
     const loader = new CommandLoader(mockClient, fixturePath)
 
@@ -76,12 +43,12 @@ describe('CommandLoader with Real Fixtures', () => {
   })
 
   it('should execute loaded commands correctly', async () => {
-    const fixturePath = join(process.cwd(), 'tests/fixtures/commands/old-architecture')
+    const fixturePath = join(process.cwd(), 'tests/fixtures/commands/new-architecture')
     const loader = new CommandLoader(mockClient, fixturePath)
 
     await loader.loadCommands()
 
-    const command = mockClient.commands.get('testcommand')
+    const command = mockClient.commands.get('testcommandclass')
     expect(command).toBeDefined()
 
     // Should execute without throwing
@@ -98,8 +65,6 @@ describe('CommandLoader with Real Fixtures', () => {
   })
 
   it('should bind command execution context correctly for class-based commands', async () => {
-    mockConfig.USE_NEW_ARCHITECTURE = true
-
     const fixturePath = join(process.cwd(), 'tests/fixtures/commands/new-architecture')
     const loader = new CommandLoader(mockClient, fixturePath)
 

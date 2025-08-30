@@ -1,5 +1,5 @@
 import { Interaction } from 'discord.js'
-import logger from '@/config/logger.js'
+import logger from '@/infrastructure/monitoring/Logger.js'
 import { ButtonHandler } from './ButtonHandler.js'
 import { ModalHandler } from './ModalHandler.js'
 import { CommandHandler } from './CommandHandler.js'

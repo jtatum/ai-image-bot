@@ -1,11 +1,11 @@
 import { ImageGenerationService } from '@/application/services/ImageGenerationService.js'
 import { IImageGenerator, IImageResult } from '@/domain/interfaces/IImageGenerator.js'
 import { ImageRequest } from '@/domain/entities/ImageRequest.js'
-import logger from '@/config/logger.js'
+import logger from '@/infrastructure/monitoring/Logger.js'
 import { Buffer } from 'node:buffer'
 
 // Mock the logger
-jest.mock('@/config/logger.js', () => ({
+jest.mock('@/infrastructure/monitoring/Logger.js', () => ({
   info: jest.fn(),
   warn: jest.fn(),
   error: jest.fn(),

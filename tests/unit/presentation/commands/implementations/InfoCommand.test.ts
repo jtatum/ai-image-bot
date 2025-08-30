@@ -2,11 +2,11 @@ import { describe, it, expect, beforeEach, jest } from '@jest/globals'
 import { ChatInputCommandInteraction } from 'discord.js'
 import { createMockChatInputInteraction } from '../../../../helpers/mockInteractions.js'
 import { InfoCommand } from '@/presentation/commands/implementations/InfoCommand.js'
-import { config } from '@/config/environment.js'
-import logger from '@/config/logger.js'
+import { config } from '@/shared/config/environment.js'
+import logger from '@/infrastructure/monitoring/Logger.js'
 
 // Mock logger
-jest.mock('@/config/logger.js', () => ({
+jest.mock('@/infrastructure/monitoring/Logger.js', () => ({
   __esModule: true,
   default: {
     child: jest.fn(() => ({
@@ -23,7 +23,7 @@ jest.mock('@/config/logger.js', () => ({
 }))
 
 // Mock config
-jest.mock('@/config/environment.js', () => ({
+jest.mock('@/shared/config/environment.js', () => ({
   config: {
     COMMAND_COOLDOWN_SECONDS: 30,
     NODE_ENV: 'test',

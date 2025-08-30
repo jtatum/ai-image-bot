@@ -3,8 +3,8 @@ import { readdirSync } from 'fs'
 import { pathToFileURL } from 'url'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { config } from '@/config/environment.js'
-import logger from '@/config/logger.js'
+import { config } from '@/shared/config/environment.js'
+import logger from '@/infrastructure/monitoring/Logger.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)

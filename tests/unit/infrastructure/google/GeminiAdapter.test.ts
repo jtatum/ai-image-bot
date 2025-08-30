@@ -1,11 +1,11 @@
 import { GeminiAdapter } from '@/infrastructure/google/GeminiAdapter.js'
-import { config } from '@/config/environment.js'
-import logger from '@/config/logger.js'
+import { config } from '@/shared/config/environment.js'
+import logger from '@/infrastructure/monitoring/Logger.js'
 import { Buffer } from 'node:buffer'
 
 // Mock the dependencies
-jest.mock('@/config/environment.js')
-jest.mock('@/config/logger.js', () => ({
+jest.mock('@/shared/config/environment.js')
+jest.mock('@/infrastructure/monitoring/Logger.js', () => ({
   info: jest.fn(),
   warn: jest.fn(),
   error: jest.fn(),

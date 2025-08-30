@@ -13,7 +13,7 @@ describe('Configuration', () => {
       process.env.NODE_ENV = 'test'
       process.env.LOG_LEVEL = 'info'
 
-      const { config } = await import('@/config/environment')
+      const { config } = await import('@/shared/config/environment')
 
       expect(config.DISCORD_TOKEN).toBe('test_token')
       expect(config.CLIENT_ID).toBe('test_client_id')
@@ -28,7 +28,7 @@ describe('Configuration', () => {
       delete process.env.LOG_LEVEL
       delete process.env.PORT
 
-      const { config } = await import('@/config/environment')
+      const { config } = await import('@/shared/config/environment')
 
       expect(config.NODE_ENV).toBe('development')
       expect(config.LOG_LEVEL).toBe('info')
@@ -47,7 +47,7 @@ describe('Configuration', () => {
       const mockConsoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
 
       await expect(async () => {
-        await import('@/config/environment')
+        await import('@/shared/config/environment')
       }).rejects.toThrow('process.exit called')
 
       expect(mockConsoleError).toHaveBeenCalledWith(

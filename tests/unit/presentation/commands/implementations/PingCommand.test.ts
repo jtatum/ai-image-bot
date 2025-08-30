@@ -2,10 +2,10 @@ import { describe, it, expect, beforeEach, jest, afterEach } from '@jest/globals
 import { ChatInputCommandInteraction } from 'discord.js'
 import { createMockChatInputInteraction } from '../../../../helpers/mockInteractions.js'
 import { PingCommand } from '@/presentation/commands/implementations/PingCommand.js'
-import logger from '@/config/logger.js'
+import logger from '@/infrastructure/monitoring/Logger.js'
 
 // Mock logger
-jest.mock('@/config/logger.js', () => ({
+jest.mock('@/infrastructure/monitoring/Logger.js', () => ({
   __esModule: true,
   default: {
     child: jest.fn(() => ({

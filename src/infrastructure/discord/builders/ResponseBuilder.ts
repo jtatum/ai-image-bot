@@ -17,7 +17,7 @@ interface EditImageResult {
   error?: string
 }
 import { IImageResult } from '@/domain/interfaces/IImageGenerator.js'
-import { createImageFilename } from '@/utils/filename.js'
+import { createImageFilename } from '@/shared/utils/filename.js'
 import { EnhancedButtonBuilder } from './ButtonBuilder.js'
 
 export type ImageOperationType = 'generated' | 'edited' | 'regenerated'

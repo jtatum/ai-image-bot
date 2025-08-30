@@ -6,13 +6,13 @@ import { CommandHandler } from '@/infrastructure/discord/handlers/CommandHandler
 import { createMockChatInputInteraction, createMockButtonInteraction, createMockModalInteraction } from '../../helpers/mockInteractions.js'
 
 // Mock the logger
-jest.mock('@/config/logger.js', () => ({
+jest.mock('@/infrastructure/monitoring/Logger.js', () => ({
   info: jest.fn(),
   debug: jest.fn(),
   error: jest.fn(),
 }))
 
-import logger from '@/config/logger.js'
+import logger from '@/infrastructure/monitoring/Logger.js'
 
 const mockLogger = logger as jest.Mocked<typeof logger>
 

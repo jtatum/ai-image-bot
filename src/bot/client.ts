@@ -1,7 +1,7 @@
 import { Client, Collection, GatewayIntentBits } from 'discord.js'
 import { Command, ExtendedClient } from './types.js'
-import logger from '@/config/logger.js'
-import { config } from '@/config/environment.js'
+import logger from '@/infrastructure/monitoring/Logger.js'
+import { config } from '@/shared/config/environment.js'
 
 export class DiscordClient extends Client implements ExtendedClient {
   public commands: Collection<string, Command>
