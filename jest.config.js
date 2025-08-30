@@ -8,6 +8,21 @@ export default {
   transform: {
     '^.+\\.ts$': ['ts-jest', {
       useESM: true,
+      diagnostics: {
+        ignoreCodes: [1343]
+      },
+      astTransformers: {
+        before: [
+          {
+            path: 'ts-jest-mock-import-meta',
+            options: {
+              metaObjectReplacement: {
+                url: ({ fileName }) => `file://${fileName}`
+              }
+            }
+          }
+        ]
+      },
       tsconfig: {
         target: 'ES2022',
         module: 'ESNext',

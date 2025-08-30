@@ -14,7 +14,8 @@
       "mcp__context7__get-library-docs",
       "Bash(npm run deploy-commands:*)",
       "Bash(npm test:*)",
-      "Bash(npx jest:*)"
+      "Bash(npx jest:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []

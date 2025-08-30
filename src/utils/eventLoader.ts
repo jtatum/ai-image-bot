@@ -4,17 +4,44 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { Event, ExtendedClient } from '@/bot/types.js'
 import logger from '@/config/logger.js'
+import { config } from '@/config/environment.js'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+export interface PathResolver {
+  getEventsPath(useNewArchitecture: boolean): string
+}
+
+class DefaultPathResolver implements PathResolver {
+  private baseDir: string
+
+  constructor() {
+    const __filename = fileURLToPath(import.meta.url)
+    this.baseDir = dirname(__filename)
+  }
+
+  getEventsPath(useNewArchitecture: boolean): string {
+    return useNewArchitecture
+      ? join(this.baseDir, '..', 'presentation', 'events', 'implementations')
+      : join(this.baseDir, '..', 'events')
+  }
+}
 
 export class EventLoader {
   private client: ExtendedClient
   private eventsPath: string
+  private useNewArchitecture: boolean
 
-  constructor(client: ExtendedClient) {
+  constructor(client: ExtendedClient, pathResolver?: PathResolver | string) {
     this.client = client
-    this.eventsPath = join(__dirname, '..', 'events')
+    this.useNewArchitecture = config.USE_NEW_ARCHITECTURE
+
+    if (typeof pathResolver === 'string') {
+      // Custom path provided directly (for testing)
+      this.eventsPath = pathResolver
+    } else {
+      // Use path resolver (for production or testing with custom resolver)
+      const resolver = pathResolver || new DefaultPathResolver()
+      this.eventsPath = resolver.getEventsPath(this.useNewArchitecture)
+    }
   }
 
   public async loadEvents(): Promise<void> {
@@ -25,7 +52,9 @@ export class EventLoader {
         await this.loadEvent(file)
       }
 
-      logger.info(`✅ Loaded ${eventFiles.length} events`)
+      logger.info(
+        `✅ Loaded ${eventFiles.length} events from ${this.useNewArchitecture ? 'new' : 'old'} architecture`
+      )
     } catch (error) {
       logger.error('Failed to load events:', error)
       throw error
@@ -47,7 +76,25 @@ export class EventLoader {
     try {
       const fileURL = pathToFileURL(filePath).href
       const eventModule = await import(fileURL)
-      const event: Event = eventModule.default || eventModule
+
+      let event: Event
+      if (this.useNewArchitecture) {
+        // New architecture: expect a class that needs to be instantiated
+        const EventClass = eventModule.default || eventModule
+        if (typeof EventClass === 'function') {
+          const eventInstance = new EventClass()
+          event = {
+            name: eventInstance.name,
+            execute: eventInstance.execute?.bind(eventInstance),
+            once: eventInstance.once,
+          }
+        } else {
+          event = EventClass
+        }
+      } else {
+        // Old architecture: expect a plain object
+        event = eventModule.default || eventModule
+      }
 
       if (!this.isValidEvent(event)) {
         logger.warn(`Invalid event structure in file: ${filePath}`)
@@ -60,7 +107,9 @@ export class EventLoader {
         this.client.on(event.name, (...args) => event.execute(...args))
       }
 
-      logger.debug(`Loaded event: ${event.name}`)
+      logger.debug(
+        `Loaded event: ${event.name} (${this.useNewArchitecture ? 'new' : 'old'} architecture)`
+      )
     } catch (error) {
       logger.error(`Failed to load event from ${filePath}:`, error)
     }

@@ -27,6 +27,7 @@ const environmentSchema = z.object({
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
   COMMAND_COOLDOWN_SECONDS: z.coerce.number().default(30),
+  USE_NEW_ARCHITECTURE: z.coerce.boolean().default(false),
   BOT_ACTIVITIES: z.string().optional(),
   GEMINI_SAFETY_HARASSMENT: harmBlockThresholdEnum.optional(),
   GEMINI_SAFETY_HATE_SPEECH: harmBlockThresholdEnum.optional(),

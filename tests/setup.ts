@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { jest } from '@jest/globals'
 
+
 // Setup environment variables for testing
 process.env.NODE_ENV = 'test'
 process.env.DISCORD_TOKEN = 'test_token_123456789'
