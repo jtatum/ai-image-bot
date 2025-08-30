@@ -248,7 +248,7 @@ export abstract class BaseCommand implements Command {
     ephemeral: boolean = false
   ): Promise<void> {
     if (!interaction.replied && !interaction.deferred) {
-      await interaction.deferReply({ ephemeral })
+      await interaction.deferReply({ flags: ephemeral ? 64 : undefined }) // 64 = MessageFlags.Ephemeral
     }
   }
 
@@ -257,9 +257,17 @@ export abstract class BaseCommand implements Command {
    */
   protected async safeReply(
     interaction: ChatInputCommandInteraction,
-    options: string | { content?: string; ephemeral?: boolean; [key: string]: unknown }
+    options:
+      | string
+      | { content?: string; ephemeral?: boolean; flags?: number; [key: string]: unknown }
   ): Promise<void> {
     try {
+      // Convert ephemeral option to flags if present
+      if (typeof options === 'object' && options.ephemeral && !options.flags) {
+        options.flags = 64 // MessageFlags.Ephemeral
+        delete options.ephemeral
+      }
+
       if (interaction.replied || interaction.deferred) {
         await interaction.editReply(options)
       } else {

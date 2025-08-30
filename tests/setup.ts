@@ -320,6 +320,9 @@ jest.mock('discord.js', () => ({
   Routes: {
     applicationCommands: jest.fn(),
     applicationGuildCommands: jest.fn()
+  },
+  MessageFlags: {
+    Ephemeral: 64
   }
 }))
 

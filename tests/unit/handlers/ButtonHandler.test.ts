@@ -160,7 +160,7 @@ describe('ButtonHandler', () => {
       expect(interaction.reply).toHaveBeenCalledWith(
         expect.objectContaining({
           content: '❌ This button action is not recognized.',
-          ephemeral: true,
+          flags: 64,
         })
       )
     })
@@ -182,7 +182,7 @@ describe('ButtonHandler', () => {
       expect(interaction.reply).toHaveBeenCalledWith(
         expect.objectContaining({
           content: '❌ There was an error processing your button action!',
-          ephemeral: true,
+          flags: 64,
         })
       )
     })
@@ -205,7 +205,7 @@ describe('ButtonHandler', () => {
       expect(interaction.editReply).toHaveBeenCalledWith(
         expect.objectContaining({
           content: '❌ There was an error processing your button action!',
-          ephemeral: true,
+          flags: 64,
         })
       )
     })
@@ -224,7 +224,7 @@ describe('ButtonHandler', () => {
       expect(interaction.editReply).toHaveBeenCalledWith(
         expect.objectContaining({
           content: '❌ There was an error processing your button action!',
-          ephemeral: true,
+          flags: 64,
         })
       )
     })

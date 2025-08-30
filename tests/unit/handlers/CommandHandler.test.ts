@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals'
-import { Collection } from 'discord.js'
+import { Collection, MessageFlags } from 'discord.js'
 import { CommandHandler } from '@/infrastructure/discord/handlers/CommandHandler.js'
 import { CooldownHandler } from '@/infrastructure/discord/handlers/CooldownHandler.js'
 import { Command, ExtendedClient } from '@/bot/types.js'
@@ -125,7 +125,7 @@ describe('CommandHandler', () => {
 
       expect(interaction.reply).toHaveBeenCalledWith({
         content: '⏳ Please wait 2.5 more seconds before using `test` again.',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       })
       expect(testCommand.execute).not.toHaveBeenCalled()
       expect(mockCooldownHandler.setCooldown).not.toHaveBeenCalled()
@@ -144,7 +144,7 @@ describe('CommandHandler', () => {
       expect(mockLogger.error).toHaveBeenCalledWith('Error executing command test:', error)
       expect(interaction.reply).toHaveBeenCalledWith({
         content: '❌ There was an error while executing this command!',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       })
     })
 
@@ -338,7 +338,7 @@ describe('CommandHandler', () => {
 
       expect(interaction.editReply).toHaveBeenCalledWith(expect.objectContaining({
         content: '❌ There was an error while executing this command!',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       }))
       expect(interaction.reply).not.toHaveBeenCalled()
     })
@@ -358,7 +358,7 @@ describe('CommandHandler', () => {
 
       expect(interaction.editReply).toHaveBeenCalledWith(expect.objectContaining({
         content: '❌ There was an error while executing this command!',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       }))
       expect(interaction.reply).not.toHaveBeenCalled()
     })
@@ -378,7 +378,7 @@ describe('CommandHandler', () => {
 
       expect(interaction.editReply).toHaveBeenCalledWith(expect.objectContaining({
         content: '❌ There was an error while executing this command!',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       }))
       expect(interaction.reply).not.toHaveBeenCalled()
     })
@@ -397,7 +397,7 @@ describe('CommandHandler', () => {
 
       expect(interaction.reply).toHaveBeenCalledWith({
         content: '❌ There was an error while executing this command!',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       })
       expect(interaction.editReply).not.toHaveBeenCalled()
     })
@@ -420,7 +420,7 @@ describe('CommandHandler', () => {
       expect(mockLogger.error).toHaveBeenCalledWith('Failed to reply to interaction:', replyError)
       expect(interaction.reply).toHaveBeenCalledWith({
         content: '❌ There was an error while executing this command!',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       })
     })
 
@@ -443,7 +443,7 @@ describe('CommandHandler', () => {
       expect(mockLogger.error).toHaveBeenCalledWith('Failed to reply to interaction:', editReplyError)
       expect(interaction.editReply).toHaveBeenCalledWith(expect.objectContaining({
         content: '❌ There was an error while executing this command!',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       }))
     })
   })
@@ -496,7 +496,7 @@ describe('CommandHandler', () => {
 
       expect(interaction2.reply).toHaveBeenCalledWith({
         content: '⏳ Please wait 3.2 more seconds before using `test` again.',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       })
       expect(testCommand.execute).not.toHaveBeenCalled()
     })

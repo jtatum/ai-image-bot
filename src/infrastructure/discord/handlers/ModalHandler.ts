@@ -68,7 +68,7 @@ export class ModalHandler {
       logger.warn(`No handler found for modal: ${interaction.customId}`)
       await interaction.reply({
         content: '❌ This modal submission is not recognized.',
-        ephemeral: true,
+        flags: 64, // MessageFlags.Ephemeral
       })
       return
     }
@@ -119,7 +119,7 @@ export class ModalHandler {
 
     const errorMessage = {
       content: '❌ There was an error processing your modal submission!',
-      ephemeral: true,
+      flags: 64, // MessageFlags.Ephemeral
     }
 
     try {

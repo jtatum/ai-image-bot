@@ -48,7 +48,7 @@ export class GeminiCommand extends BaseCommand {
       await this.safeReply(interaction, {
         content:
           '⚠️ Image generation is currently unavailable. The Google API key might not be configured.',
-        ephemeral: true,
+        flags: 64, // MessageFlags.Ephemeral
       })
       return
     }

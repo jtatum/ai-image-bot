@@ -161,7 +161,7 @@ describe('GeminiCommand', () => {
 
       expect(mockInteraction.reply).toHaveBeenCalledWith({
         content: '⚠️ Image generation is currently unavailable. The Google API key might not be configured.',
-        ephemeral: true,
+        flags: 64,
       })
       expect(mockGenerateImageUseCase.execute).not.toHaveBeenCalled()
       expect(mockInteraction.deferReply).not.toHaveBeenCalled()
@@ -182,7 +182,7 @@ describe('GeminiCommand', () => {
 
       await command.execute(mockInteraction)
 
-      expect(mockInteraction.deferReply).toHaveBeenCalledWith({ ephemeral: false })
+      expect(mockInteraction.deferReply).toHaveBeenCalledWith({ flags: undefined })
       expect(mockGenerateImageUseCase.execute).toHaveBeenCalled()
     })
   })

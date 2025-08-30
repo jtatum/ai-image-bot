@@ -68,7 +68,7 @@ export class ButtonHandler {
       logger.warn(`No handler found for button: ${interaction.customId}`)
       await interaction.reply({
         content: '❌ This button action is not recognized.',
-        ephemeral: true,
+        flags: 64, // MessageFlags.Ephemeral
       })
       return
     }
@@ -118,7 +118,7 @@ export class ButtonHandler {
 
     const errorMessage = {
       content: '❌ There was an error processing your button action!',
-      ephemeral: true,
+      flags: 64, // MessageFlags.Ephemeral
     }
 
     try {

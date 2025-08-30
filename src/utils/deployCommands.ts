@@ -33,12 +33,24 @@ export async function deployCommands(guildId?: string): Promise<void> {
     const commands = Array.from(mockClient.commands.values())
       .map(command => {
         if (command.data && typeof command.data.toJSON === 'function') {
-          return command.data.toJSON()
+          const jsonData = command.data.toJSON()
+          logger.debug(`Command ${command.data.name} data:`, jsonData)
+          return jsonData
         }
-        logger.warn(`Command ${command.data?.name || 'unknown'} has invalid data structure`)
+        logger.warn(`Command ${command.data?.name || 'unknown'} has invalid data structure`, {
+          commandType: typeof command,
+          hasData: !!command.data,
+          dataType: typeof command.data,
+          hasToJSON: command.data && typeof command.data.toJSON === 'function',
+        })
         return null
       })
       .filter(Boolean) // Remove null entries
+
+    logger.info(
+      `Commands to deploy:`,
+      commands.map(cmd => ({ name: cmd!.name, description: cmd!.description }))
+    )
 
     const rest = new REST().setToken(config.DISCORD_TOKEN)
 

@@ -82,7 +82,7 @@ export class CommandHandler {
     if (cooldownResult.isOnCooldown && cooldownResult.timeRemaining) {
       await interaction.reply({
         content: `⏳ Please wait ${cooldownResult.timeRemaining.toFixed(1)} more seconds before using \`${command.data.name}\` again.`,
-        ephemeral: true,
+        flags: 64, // MessageFlags.Ephemeral
       })
       return { blocked: true }
     }
@@ -127,7 +127,7 @@ export class CommandHandler {
 
     const errorMessage = {
       content: '❌ There was an error while executing this command!',
-      ephemeral: true,
+      flags: 64, // MessageFlags.Ephemeral
     }
 
     await safeReply(interaction, errorMessage)

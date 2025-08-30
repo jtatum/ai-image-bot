@@ -178,7 +178,7 @@ describe('ModalHandler', () => {
       expect(interaction.reply).toHaveBeenCalledWith(
         expect.objectContaining({
           content: '❌ This modal submission is not recognized.',
-          ephemeral: true,
+          flags: 64,
         })
       )
     })
@@ -204,7 +204,7 @@ describe('ModalHandler', () => {
       expect(interaction.reply).toHaveBeenCalledWith(
         expect.objectContaining({
           content: '❌ There was an error processing your modal submission!',
-          ephemeral: true,
+          flags: 64,
         })
       )
     })
@@ -231,7 +231,7 @@ describe('ModalHandler', () => {
       expect(interaction.editReply).toHaveBeenCalledWith(
         expect.objectContaining({
           content: '❌ There was an error processing your modal submission!',
-          ephemeral: true,
+          flags: 64,
         })
       )
     })
@@ -254,7 +254,7 @@ describe('ModalHandler', () => {
       expect(interaction.editReply).toHaveBeenCalledWith(
         expect.objectContaining({
           content: '❌ There was an error processing your modal submission!',
-          ephemeral: true,
+          flags: 64,
         })
       )
     })

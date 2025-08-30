@@ -446,7 +446,7 @@ describe('BaseCommand', () => {
         const baseCommand = new TestCommand()
         await baseCommand['deferReply'](mockInteraction)
         
-        expect(mockInteraction.deferReply).toHaveBeenCalledWith({ ephemeral: false })
+        expect(mockInteraction.deferReply).toHaveBeenCalledWith({ flags: undefined })
       })
 
       it('should not defer if already replied', async () => {
@@ -469,7 +469,7 @@ describe('BaseCommand', () => {
         const baseCommand = new TestCommand()
         await baseCommand['deferReply'](mockInteraction, true)
         
-        expect(mockInteraction.deferReply).toHaveBeenCalledWith({ ephemeral: true })
+        expect(mockInteraction.deferReply).toHaveBeenCalledWith({ flags: 64 })
       })
     })
 

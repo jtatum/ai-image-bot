@@ -65,7 +65,7 @@ export class ImageInteractionHandlers {
       logger.error('Error in regenerate button handler:', error)
       await interaction.reply({
         content: '❌ There was an error showing the regenerate modal.',
-        ephemeral: true,
+        flags: 64, // MessageFlags.Ephemeral
       })
     }
   }
@@ -82,7 +82,7 @@ export class ImageInteractionHandlers {
         await interaction.reply({
           content:
             '⚠️ Image generation is currently unavailable. The Google API key might not be configured.',
-          ephemeral: true,
+          flags: 64, // MessageFlags.Ephemeral
         })
         return
       }
@@ -149,7 +149,6 @@ export class ImageInteractionHandlers {
           contextLabel: 'regeneration',
           prompt: prompt,
           userId: interaction.user.id,
-          ephemeral: true,
         })
         await interaction.editReply(errorResponse)
         return
@@ -203,7 +202,7 @@ export class ImageInteractionHandlers {
       logger.error('Error in edit button handler:', error)
       await interaction.reply({
         content: '❌ There was an error showing the edit modal.',
-        ephemeral: true,
+        flags: 64, // MessageFlags.Ephemeral
       })
     }
   }
@@ -220,7 +219,7 @@ export class ImageInteractionHandlers {
         await interaction.reply({
           content:
             '⚠️ Image editing is currently unavailable. The Google API key might not be configured.',
-          ephemeral: true,
+          flags: 64, // MessageFlags.Ephemeral
         })
         return
       }
@@ -230,7 +229,7 @@ export class ImageInteractionHandlers {
       if (!originalMessage || !originalMessage.attachments.first()) {
         await interaction.reply({
           content: '❌ Could not find the original image to edit.',
-          ephemeral: true,
+          flags: 64, // MessageFlags.Ephemeral
         })
         return
       }
@@ -307,7 +306,6 @@ export class ImageInteractionHandlers {
           contextLabel: 'editing',
           prompt: editDescription,
           userId: interaction.user.id,
-          ephemeral: true,
         })
         await interaction.editReply(errorResponse)
         return
@@ -385,7 +383,7 @@ export class ImageInteractionHandlers {
   ): Promise<void> {
     const errorMessage = {
       content: `❌ ${defaultMessage}`,
-      ephemeral: true,
+      flags: 64, // MessageFlags.Ephemeral
     }
 
     try {

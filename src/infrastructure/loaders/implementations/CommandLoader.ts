@@ -11,18 +11,8 @@ export class CommandLoader extends BaseModuleLoader<Command> {
       register: (client: ExtendedClient, command: Command) => {
         client.commands.set(command.data.name, command)
       },
-      transform: (moduleInstance: unknown) => {
-        const commandInstance = moduleInstance as {
-          data: Command['data']
-          execute: Command['execute']
-          cooldown?: Command['cooldown']
-        }
-        return {
-          data: commandInstance.data,
-          execute: commandInstance.execute.bind(commandInstance),
-          cooldown: commandInstance.cooldown,
-        }
-      },
+      // Don't transform - use the command instance directly
+      // BaseCommand instances already have the correct execute method
     })
   }
 
