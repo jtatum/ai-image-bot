@@ -451,8 +451,8 @@ describe('GeminiCommand', () => {
       expect(buttons[0].components).toHaveLength(2)
       
       const [regenerateButton, editButton] = buttons[0].components
-      expect(regenerateButton.data.label).toBe('🔄 Regenerate')
-      expect(editButton.data.label).toBe('✏️ Edit')
+      expect(regenerateButton.data.label).toBe('🔄')
+      expect(editButton.data.label).toBe('✏️')
       expect(regenerateButton.data.style).toBe(ButtonStyle.Secondary)
       expect(editButton.data.style).toBe(ButtonStyle.Secondary)
     })
@@ -465,7 +465,7 @@ describe('GeminiCommand', () => {
       expect(buttons[0].components).toHaveLength(1)
       
       const retryButton = buttons[0].components[0]
-      expect(retryButton.data.label).toBe('🔄 Try Again')
+      expect(retryButton.data.label).toBe('🔄')
       expect(retryButton.data.style).toBe(ButtonStyle.Primary)
       // Test that retry button also uses new architecture prefix
       expect(retryButton.data.custom_id).toMatch(/^new_regenerate_user123_\d+$/)
@@ -484,8 +484,8 @@ describe('GeminiCommand', () => {
       expect(editButton.data.custom_id).toMatch(/^new_edit_user123_\d+$/)
       
       // Test labels and styles
-      expect(regenerateButton.data.label).toBe('🔄 Regenerate')
-      expect(editButton.data.label).toBe('✏️ Edit')
+      expect(regenerateButton.data.label).toBe('🔄')
+      expect(editButton.data.label).toBe('✏️')
       expect(regenerateButton.data.style).toBe(2) // ButtonStyle.Secondary
       expect(editButton.data.style).toBe(2) // ButtonStyle.Secondary
     })

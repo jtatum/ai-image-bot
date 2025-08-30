@@ -336,16 +336,26 @@ describe('InteractionRouter', () => {
       })
     })
 
-    it.skip('should detect missing handlers', () => {
-      // TODO: This test would require refactoring InteractionRouter constructor
-      // to not call getStats() immediately on initialization
-      const invalidConfig = {
-        buttonHandler: null as any,
+    it('should detect missing handlers', () => {
+      // Create a mock button handler that appears valid during construction but fails validation
+      const mockInvalidButtonHandler = {
+        handleButton: jest.fn(),
+        registerHandler: jest.fn(),
+        getStats: jest.fn().mockReturnValue({ totalHandlers: 0 }),
+        getRegisteredPrefixes: jest.fn().mockReturnValue([]),
+      }
+
+      // Temporarily replace the buttonHandler property after construction
+      const validConfig = {
+        buttonHandler: mockInvalidButtonHandler as any,
         modalHandler: mockModalHandler,
         commandHandler: mockCommandHandler,
       }
-
-      const invalidRouter = new InteractionRouter(invalidConfig)
+      
+      const invalidRouter = new InteractionRouter(validConfig)
+      // Replace with null to test validation
+      ;(invalidRouter as any).buttonHandler = null
+      
       const validation = invalidRouter.validateConfiguration()
 
       expect(validation.isValid).toBe(false)

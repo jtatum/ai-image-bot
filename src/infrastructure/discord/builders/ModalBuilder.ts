@@ -134,7 +134,7 @@ export class EnhancedModalBuilder {
     const { userId, timestamp = Date.now(), originalPrompt = '', maxPromptLength = 1000 } = options
 
     return this.createTextInputModal(
-      `regenerate_modal_${userId}_${timestamp}`,
+      `new_regenerate_modal_${userId}_${timestamp}`,
       'Edit Prompt and Regenerate',
       'prompt',
       'Image Prompt',
@@ -156,7 +156,7 @@ export class EnhancedModalBuilder {
     const { userId, timestamp = Date.now(), maxEditLength = 500 } = options
 
     return this.createTextInputModal(
-      `edit_modal_${userId}_${timestamp}`,
+      `new_edit_modal_${userId}_${timestamp}`,
       'Describe Your Image Edit',
       'edit_description',
       'What changes would you like?',
@@ -304,7 +304,7 @@ export class EnhancedModalBuilder {
    * Parse userId from modal customId (for image modals)
    */
   static parseUserIdFromCustomId(customId: string): string | null {
-    const match = customId.match(/^(regenerate_modal|edit_modal)_(\d+)_\d+$/)
+    const match = customId.match(/^(?:new_)?(regenerate_modal|edit_modal)_(\d+)_\d+$/)
     return match ? match[2] : null
   }
 
@@ -312,8 +312,8 @@ export class EnhancedModalBuilder {
    * Parse modal type from customId
    */
   static parseModalTypeFromCustomId(customId: string): 'regenerate' | 'edit' | null {
-    if (customId.startsWith('regenerate_modal_')) return 'regenerate'
-    if (customId.startsWith('edit_modal_')) return 'edit'
+    if (customId.includes('regenerate_modal_')) return 'regenerate'
+    if (customId.includes('edit_modal_')) return 'edit'
     return null
   }
 

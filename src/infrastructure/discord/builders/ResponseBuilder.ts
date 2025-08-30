@@ -4,7 +4,19 @@ import {
   ButtonBuilder as DiscordButtonBuilder,
 } from 'discord.js'
 import { Buffer } from 'node:buffer'
-import { GenerateImageResult, EditImageResult } from '@/services/gemini.js'
+// Legacy types for backward compatibility
+interface GenerateImageResult {
+  success: boolean
+  buffer?: Buffer
+  error?: string
+}
+
+interface EditImageResult {
+  success: boolean
+  buffer?: Buffer
+  error?: string
+}
+import { IImageResult } from '@/domain/interfaces/IImageGenerator.js'
 import { createImageFilename } from '@/utils/filename.js'
 import { EnhancedButtonBuilder } from './ButtonBuilder.js'
 
@@ -65,7 +77,7 @@ export class EnhancedResponseBuilder {
    * Enhanced version of createImageAttachment from utils/imageHelpers.ts
    */
   createImageAttachment(
-    result: GenerateImageResult | EditImageResult,
+    result: GenerateImageResult | EditImageResult | IImageResult,
     username: string,
     prompt: string,
     options: AttachmentOptions = {}
@@ -92,7 +104,7 @@ export class EnhancedResponseBuilder {
    * Enhanced version of buildImageSuccessResponse from utils/imageHelpers.ts
    */
   buildImageSuccessResponse(
-    result: GenerateImageResult | EditImageResult,
+    result: GenerateImageResult | EditImageResult | IImageResult,
     options: SuccessResponseOptions
   ): ImageSuccessResponse {
     const {
@@ -121,7 +133,9 @@ export class EnhancedResponseBuilder {
     }
 
     // Build content message
-    const content = customMessage || this.buildSuccessMessage(type, userId, contextLabel, prompt)
+    const processingTime = 'metadata' in result ? result.metadata?.processingTime : undefined
+    const content =
+      customMessage || this.buildSuccessMessage(type, userId, contextLabel, prompt, processingTime)
 
     return {
       content,
@@ -245,7 +259,9 @@ export class EnhancedResponseBuilder {
   /**
    * Validate that a result can be used to create an attachment
    */
-  static validateImageResult(result: GenerateImageResult | EditImageResult): boolean {
+  static validateImageResult(
+    result: GenerateImageResult | EditImageResult | IImageResult
+  ): boolean {
     return result.success && !!result.buffer && result.buffer.length > 0
   }
 
@@ -267,7 +283,8 @@ export class EnhancedResponseBuilder {
     type: ImageOperationType,
     userId: string,
     contextLabel: string,
-    prompt: string
+    prompt: string,
+    processingTime?: number
   ): string {
     const typeEmojis: Record<ImageOperationType, string> = {
       generated: '🎨',
@@ -281,7 +298,8 @@ export class EnhancedResponseBuilder {
       regenerated: 'regenerated',
     }
 
-    return `<@${userId}> ${typeEmojis[type]} **Image ${typeLabels[type]} successfully!**\n**${contextLabel}:** ${prompt}`
+    const timeText = processingTime ? ` (${(processingTime / 1000).toFixed(1)}s)` : ''
+    return `<@${userId}> ${typeEmojis[type]} **Image ${typeLabels[type]} successfully!**${timeText}\n**${contextLabel}:** ${prompt}`
   }
 
   /**

@@ -302,14 +302,14 @@ describe('ModalHandler', () => {
   describe('findHandler', () => {
     beforeEach(() => {
       modalHandler.registerHandler({ prefix: 'gen_modal_', handler: mockHandler1 })
-      modalHandler.registerHandler({ prefix: 'edit_modal_', handler: mockHandler2 })
+      modalHandler.registerHandler({ prefix: 'new_edit_modal_', handler: mockHandler2 })
     })
 
     it('should find handler by prefix matching', () => {
       expect(modalHandler.canHandle('gen_modal_user123')).toBe(true)
-      expect(modalHandler.canHandle('edit_modal_user456')).toBe(true)
+      expect(modalHandler.canHandle('new_edit_modal_user456')).toBe(true)
       expect(modalHandler.getMatchingPrefix('gen_modal_user123')).toBe('gen_modal_')
-      expect(modalHandler.getMatchingPrefix('edit_modal_user456')).toBe('edit_modal_')
+      expect(modalHandler.getMatchingPrefix('new_edit_modal_user456')).toBe('new_edit_modal_')
     })
 
     it('should return undefined for non-matching custom ID', () => {
@@ -449,8 +449,7 @@ describe('ModalHandler', () => {
   })
 
   describe('validateModalFields', () => {
-    it.skip('should validate modal fields correctly', () => {
-      // TODO: Fix mock field collection structure
+    it('should validate modal fields correctly', () => {
       const mockFields = new Collection([
         ['field1', { customId: 'field1', value: 'test value', type: 4 }],
         ['field2', { customId: 'field2', value: '', type: 4 }], // Empty field
@@ -463,9 +462,6 @@ describe('ModalHandler', () => {
           fields: mockFields,
         },
       })
-
-      // Manually set the fields collection
-      interaction.fields.fields = mockFields
 
       const validation = modalHandler.validateModalFields(interaction)
 
@@ -541,7 +537,7 @@ describe('ModalHandler', () => {
 
       modalHandler.registerHandlers([
         { prefix: 'gen_modal_', handler: genHandler, description: 'Generate modal handler' },
-        { prefix: 'edit_modal_', handler: editHandler, description: 'Edit modal handler' },
+        { prefix: 'new_edit_modal_', handler: editHandler, description: 'Edit modal handler' },
       ])
 
       const genInteraction = createMockModalInteraction({ 
@@ -551,7 +547,7 @@ describe('ModalHandler', () => {
         },
       })
       const editInteraction = createMockModalInteraction({ 
-        customId: 'edit_modal_user123',
+        customId: 'new_edit_modal_user123',
         fields: {
           fields: new Collection([['field1', { customId: 'field1', value: 'test', type: 4 }]]) as any,
         },
@@ -598,8 +594,7 @@ describe('ModalHandler', () => {
       expect(modalHandler.getMatchingPrefix('admin_modal_ban')).toBe('admin_modal_')
     })
 
-    it.skip('should handle field validation with real modal data', () => {
-      // TODO: Fix mock field collection structure
+    it('should handle field validation with real modal data', () => {
       const mockFields = new Collection([
         ['prompt', { customId: 'prompt', value: 'Generate a cat image', type: 4 }],
         ['style', { customId: 'style', value: 'realistic', type: 4 }],
@@ -615,9 +610,6 @@ describe('ModalHandler', () => {
           }) as any,
         },
       })
-
-      // Manually set the fields collection
-      interaction.fields.fields = mockFields
 
       const validation = modalHandler.validateModalFields(interaction)
       const promptValue = modalHandler.getFieldValue(interaction, 'prompt')
@@ -638,7 +630,7 @@ describe('ModalHandler', () => {
         })
 
         expect(modal).toBeDefined()
-        expect(modal.data.custom_id).toMatch(/^regenerate_modal_user123_\d+$/)
+        expect(modal.data.custom_id).toMatch(/^new_regenerate_modal_user123_\d+$/)
         expect(modal.data.title).toBe('Edit Prompt and Regenerate')
         expect(modal.data.components).toHaveLength(1)
         
@@ -657,7 +649,7 @@ describe('ModalHandler', () => {
           timestamp: 1234567890,
         })
 
-        expect(modal.data.custom_id).toBe('regenerate_modal_user456_1234567890')
+        expect(modal.data.custom_id).toBe('new_regenerate_modal_user456_1234567890')
         
         const textInput = modal.data.components![0].components[0]
         expect(textInput.value).toBe('a cute robot')
@@ -681,7 +673,7 @@ describe('ModalHandler', () => {
         })
 
         expect(modal).toBeDefined()
-        expect(modal.data.custom_id).toMatch(/^edit_modal_user123_\d+$/)
+        expect(modal.data.custom_id).toMatch(/^new_edit_modal_user123_\d+$/)
         expect(modal.data.title).toBe('Describe Your Image Edit')
         expect(modal.data.components).toHaveLength(1)
         
@@ -700,7 +692,7 @@ describe('ModalHandler', () => {
           maxEditLength: 300,
         })
 
-        expect(modal.data.custom_id).toBe('edit_modal_user456_9876543210')
+        expect(modal.data.custom_id).toBe('new_edit_modal_user456_9876543210')
         
         const textInput = modal.data.components![0].components[0]
         expect(textInput.max_length).toBe(300)
@@ -770,12 +762,12 @@ describe('ModalHandler', () => {
 
     describe('parseUserIdFromCustomId', () => {
       it('should parse user ID from regenerate modal custom ID', () => {
-        const userId = modalHandler.parseUserIdFromCustomId('regenerate_modal_123456_1234567890')
+        const userId = modalHandler.parseUserIdFromCustomId('new_regenerate_modal_123456_1234567890')
         expect(userId).toBe('123456')
       })
 
       it('should parse user ID from edit modal custom ID', () => {
-        const userId = modalHandler.parseUserIdFromCustomId('edit_modal_789012_1234567890')
+        const userId = modalHandler.parseUserIdFromCustomId('new_edit_modal_789012_1234567890')
         expect(userId).toBe('789012')
       })
 
@@ -787,12 +779,12 @@ describe('ModalHandler', () => {
 
     describe('parseModalTypeFromCustomId', () => {
       it('should parse modal type from regenerate modal', () => {
-        const type = modalHandler.parseModalTypeFromCustomId('regenerate_modal_123_1234567890')
+        const type = modalHandler.parseModalTypeFromCustomId('new_regenerate_modal_123_1234567890')
         expect(type).toBe('regenerate')
       })
 
       it('should parse modal type from edit modal', () => {
-        const type = modalHandler.parseModalTypeFromCustomId('edit_modal_456_1234567890')
+        const type = modalHandler.parseModalTypeFromCustomId('new_edit_modal_456_1234567890')
         expect(type).toBe('edit')
       })
 
@@ -805,19 +797,19 @@ describe('ModalHandler', () => {
     describe('validateModalInteraction', () => {
       it('should validate modal interaction with expected prefix', () => {
         const interaction = createMockModalInteraction({
-          customId: 'regenerate_modal_user123_1234567890'
+          customId: 'new_regenerate_modal_user123_1234567890'
         })
 
-        const isValid = modalHandler.validateModalInteraction(interaction, 'regenerate_modal_')
+        const isValid = modalHandler.validateModalInteraction(interaction, 'new_regenerate_modal_')
         expect(isValid).toBe(true)
       })
 
       it('should reject modal interaction with wrong prefix', () => {
         const interaction = createMockModalInteraction({
-          customId: 'edit_modal_user123_1234567890'
+          customId: 'new_edit_modal_user123_1234567890'
         })
 
-        const isValid = modalHandler.validateModalInteraction(interaction, 'regenerate_modal_')
+        const isValid = modalHandler.validateModalInteraction(interaction, 'new_regenerate_modal_')
         expect(isValid).toBe(false)
       })
 
@@ -826,7 +818,7 @@ describe('ModalHandler', () => {
           customId: 'unknown_modal'
         })
 
-        const isValid = modalHandler.validateModalInteraction(interaction, 'regenerate_modal_')
+        const isValid = modalHandler.validateModalInteraction(interaction, 'new_regenerate_modal_')
         expect(isValid).toBe(false)
       })
     })
@@ -912,7 +904,7 @@ describe('ModalHandler', () => {
       it('should work with created modals in handler workflow', async () => {
         // Register a handler for regenerate modals
         modalHandler.registerHandler({
-          prefix: 'regenerate_modal_',
+          prefix: 'new_regenerate_modal_',
           handler: mockHandler1,
           description: 'Regenerate modal handler'
         })
@@ -931,7 +923,7 @@ describe('ModalHandler', () => {
 
         // Should be handled by our registered handler
         expect(modalHandler.canHandle(customId)).toBe(true)
-        expect(modalHandler.getMatchingPrefix(customId)).toBe('regenerate_modal_')
+        expect(modalHandler.getMatchingPrefix(customId)).toBe('new_regenerate_modal_')
 
         // Handle the interaction
         await modalHandler.handleModal(interaction)

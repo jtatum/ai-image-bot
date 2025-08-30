@@ -109,9 +109,9 @@ export class InteractionRouter {
     commands: number
     totalHandlers: number
   } {
-    const buttonStats = this.buttonHandler.getStats()
-    const modalStats = this.modalHandler.getStats()
-    const commandStats = this.commandHandler.getStats()
+    const buttonStats = this.buttonHandler?.getStats() ?? { totalHandlers: 0 }
+    const modalStats = this.modalHandler?.getStats() ?? { totalHandlers: 0 }
+    const commandStats = this.commandHandler?.getStats() ?? { totalCommands: 0 }
 
     return {
       buttonHandlers: buttonStats.totalHandlers,

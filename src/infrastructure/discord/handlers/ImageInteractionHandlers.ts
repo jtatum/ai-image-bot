@@ -8,6 +8,7 @@ import { GeminiAdapter } from '@/infrastructure/google/GeminiAdapter.js'
 import { ImageRequest } from '@/domain/entities/ImageRequest.js'
 import { EnhancedResponseBuilder } from '@/infrastructure/discord/builders/ResponseBuilder.js'
 import { EnhancedModalBuilder } from '@/infrastructure/discord/builders/ModalBuilder.js'
+import { EnhancedButtonBuilder } from '@/infrastructure/discord/builders/ButtonBuilder.js'
 
 /**
  * Handlers for image-related interactions using the new clean architecture
@@ -19,6 +20,7 @@ export class ImageInteractionHandlers {
   private readonly regenerateImageUseCase: RegenerateImageUseCase
   private readonly responseBuilder: EnhancedResponseBuilder
   private readonly modalBuilder: EnhancedModalBuilder
+  private readonly buttonBuilder: EnhancedButtonBuilder
 
   constructor() {
     // Initialize dependencies using clean architecture
@@ -28,6 +30,7 @@ export class ImageInteractionHandlers {
     this.regenerateImageUseCase = new RegenerateImageUseCase(geminiAdapter)
     this.responseBuilder = new EnhancedResponseBuilder()
     this.modalBuilder = new EnhancedModalBuilder()
+    this.buttonBuilder = new EnhancedButtonBuilder()
   }
 
   /**
@@ -37,8 +40,10 @@ export class ImageInteractionHandlers {
     try {
       // Extract original prompt from the message content
       const messageContent = interaction.message.content
-      const promptMatch = messageContent.match(/\*\*(?:Prompt|Edit Request):\*\* (.+)/)
-      const originalPrompt = promptMatch?.[1] || ''
+      // Try new format first (> prompt), then fall back to old format (**Label:** prompt)
+      const newFormatMatch = messageContent.match(/^> (.+)$/m)
+      const oldFormatMatch = messageContent.match(/\*\*[^:]+:\*\* (.+)/)
+      const originalPrompt = newFormatMatch?.[1] || oldFormatMatch?.[1] || ''
 
       logger.debug('Regenerate button clicked', {
         userId: interaction.user.id,
@@ -136,14 +141,8 @@ export class ImageInteractionHandlers {
         return
       }
 
-      // Build success response using new builder
-      const successResponse = this.responseBuilder.buildImageSuccessResponse(result.imageResult, {
-        type: 'regenerated',
-        username: interaction.user.username,
-        prompt,
-        userId: interaction.user.id,
-        contextLabel: 'Prompt',
-      })
+      // Build success response using helper method
+      const successResponse = this.buildSuccessResponse('regenerated', result, interaction, prompt)
 
       await interaction.editReply(successResponse)
 
@@ -277,14 +276,13 @@ export class ImageInteractionHandlers {
         return
       }
 
-      // Build success response using new builder
-      const successResponse = this.responseBuilder.buildImageSuccessResponse(result.imageResult, {
-        type: 'edited',
-        username: interaction.user.username,
-        prompt: editDescription,
-        userId: interaction.user.id,
-        contextLabel: 'Edit Request',
-      })
+      // Build success response using helper method
+      const successResponse = this.buildSuccessResponse(
+        'edited',
+        result,
+        interaction,
+        editDescription
+      )
 
       await interaction.editReply(successResponse)
 
@@ -296,6 +294,39 @@ export class ImageInteractionHandlers {
     } catch (error) {
       logger.error('Error in edit modal handler:', error)
       await this.handleInteractionError(interaction, error, 'Failed to edit image')
+    }
+  }
+
+  /**
+   * Build success response using GeminiCommand format
+   */
+  private buildSuccessResponse(
+    type: 'regenerated' | 'edited',
+    result: any,
+    interaction: any,
+    prompt: string
+  ) {
+    const typeEmojis = { regenerated: '🎨', edited: '✏️' }
+    const typeLabels = { regenerated: 'regenerated', edited: 'edited' }
+
+    const timeText = result.imageResult.metadata?.processingTime
+      ? ` (${(result.imageResult.metadata.processingTime / 1000).toFixed(1)}s)`
+      : ''
+    const content = `${typeEmojis[type]} **${interaction.user.username}** ${typeLabels[type]} an image${timeText}\n> ${prompt}`
+
+    const attachment = this.responseBuilder.createImageAttachment(
+      result.imageResult,
+      interaction.user.username,
+      prompt,
+      { prefix: type === 'edited' ? 'edited' : '' }
+    )
+
+    const buttons = this.buttonBuilder.createImageActionButtons({ userId: interaction.user.id })
+
+    return {
+      content,
+      files: [attachment],
+      components: [buttons],
     }
   }
 

@@ -181,12 +181,12 @@ export class GeminiCommand extends BaseCommand {
   private buildActionButtons(_prompt: string, userId: string) {
     const regenerateButton = new ButtonBuilder()
       .setCustomId(`new_regenerate_${userId}_${Date.now()}`)
-      .setLabel('🔄 Regenerate')
+      .setLabel('🔄')
       .setStyle(ButtonStyle.Secondary)
 
     const editButton = new ButtonBuilder()
       .setCustomId(`new_edit_${userId}_${Date.now()}`)
-      .setLabel('✏️ Edit')
+      .setLabel('✏️')
       .setStyle(ButtonStyle.Secondary)
 
     return [new ActionRowBuilder().addComponents(regenerateButton, editButton)]
@@ -199,7 +199,7 @@ export class GeminiCommand extends BaseCommand {
   private buildRetryButton(_prompt: string, userId: string) {
     const retryButton = new ButtonBuilder()
       .setCustomId(`new_regenerate_${userId}_${Date.now()}`)
-      .setLabel('🔄 Try Again')
+      .setLabel('🔄')
       .setStyle(ButtonStyle.Primary)
 
     return [new ActionRowBuilder().addComponents(retryButton)]

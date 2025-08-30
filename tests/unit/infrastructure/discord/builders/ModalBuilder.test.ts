@@ -154,7 +154,7 @@ describe('EnhancedModalBuilder', () => {
 
       const modal = builder.createRegenerateModal(options)
 
-      expect(modal.data.custom_id).toMatch(/^regenerate_modal_123456789_\d+$/)
+      expect(modal.data.custom_id).toMatch(/^new_regenerate_modal_123456789_\d+$/)
       expect(modal.data.title).toBe('Edit Prompt and Regenerate')
 
       const textInput = modal.data.components![0].components![0]
@@ -174,7 +174,7 @@ describe('EnhancedModalBuilder', () => {
       }
 
       const modal = builder.createRegenerateModal(options)
-      expect(modal.data.custom_id).toBe(`regenerate_modal_123456789_${timestamp}`)
+      expect(modal.data.custom_id).toBe(`new_regenerate_modal_123456789_${timestamp}`)
     })
 
     it('should use custom maxPromptLength when provided', () => {
@@ -199,7 +199,7 @@ describe('EnhancedModalBuilder', () => {
 
       const modal = builder.createEditModal(options)
 
-      expect(modal.data.custom_id).toMatch(/^edit_modal_123456789_\d+$/)
+      expect(modal.data.custom_id).toMatch(/^new_edit_modal_123456789_\d+$/)
       expect(modal.data.title).toBe('Describe Your Image Edit')
 
       const textInput = modal.data.components![0].components![0]
@@ -360,15 +360,15 @@ describe('EnhancedModalBuilder', () => {
   describe('static utility methods', () => {
     describe('validateModalInteraction', () => {
       it('should validate modal interaction with correct prefix', () => {
-        const interaction = { customId: 'regenerate_modal_123456789_1234567890' } as ModalSubmitInteraction
-        const result = EnhancedModalBuilder.validateModalInteraction(interaction, 'regenerate_modal_')
+        const interaction = { customId: 'new_regenerate_modal_123456789_1234567890' } as ModalSubmitInteraction
+        const result = EnhancedModalBuilder.validateModalInteraction(interaction, 'new_regenerate_modal_')
 
         expect(result).toBe(true)
       })
 
       it('should reject modal interaction with incorrect prefix', () => {
         const interaction = { customId: 'wrong_modal_123456789_1234567890' } as ModalSubmitInteraction
-        const result = EnhancedModalBuilder.validateModalInteraction(interaction, 'regenerate_modal_')
+        const result = EnhancedModalBuilder.validateModalInteraction(interaction, 'new_regenerate_modal_')
 
         expect(result).toBe(false)
       })
@@ -376,7 +376,7 @@ describe('EnhancedModalBuilder', () => {
 
     describe('parseUserIdFromCustomId', () => {
       it('should parse userId from regenerate modal customId', () => {
-        const customId = 'regenerate_modal_123456789_1234567890'
+        const customId = 'new_regenerate_modal_123456789_1234567890'
         const result = EnhancedModalBuilder.parseUserIdFromCustomId(customId)
 
         expect(result).toBe('123456789')
@@ -399,14 +399,14 @@ describe('EnhancedModalBuilder', () => {
 
     describe('parseModalTypeFromCustomId', () => {
       it('should parse regenerate type from customId', () => {
-        const customId = 'regenerate_modal_123456789_1234567890'
+        const customId = 'new_regenerate_modal_123456789_1234567890'
         const result = EnhancedModalBuilder.parseModalTypeFromCustomId(customId)
 
         expect(result).toBe('regenerate')
       })
 
       it('should parse edit type from customId', () => {
-        const customId = 'edit_modal_123456789_1234567890'
+        const customId = 'new_edit_modal_123456789_1234567890'
         const result = EnhancedModalBuilder.parseModalTypeFromCustomId(customId)
 
         expect(result).toBe('edit')
@@ -547,7 +547,7 @@ describe('ModalBuilderFactory', () => {
 
       const modal = ModalBuilderFactory.createRegenerateModal(userId, originalPrompt)
 
-      expect(modal.data.custom_id).toMatch(/^regenerate_modal_123456789_\d+$/)
+      expect(modal.data.custom_id).toMatch(/^new_regenerate_modal_123456789_\d+$/)
       expect(modal.data.title).toBe('Edit Prompt and Regenerate')
 
       const textInput = modal.data.components![0].components![0]
@@ -572,7 +572,7 @@ describe('ModalBuilderFactory', () => {
 
       const modal = ModalBuilderFactory.createEditModal(userId)
 
-      expect(modal.data.custom_id).toMatch(/^edit_modal_123456789_\d+$/)
+      expect(modal.data.custom_id).toMatch(/^new_edit_modal_123456789_\d+$/)
       expect(modal.data.title).toBe('Describe Your Image Edit')
 
       const textInput = modal.data.components![0].components![0]

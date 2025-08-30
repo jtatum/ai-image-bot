@@ -262,14 +262,14 @@ describe('ButtonHandler', () => {
   describe('findHandler', () => {
     beforeEach(() => {
       buttonHandler.registerHandler({ prefix: 'gen_', handler: mockHandler1 })
-      buttonHandler.registerHandler({ prefix: 'edit_', handler: mockHandler2 })
+      buttonHandler.registerHandler({ prefix: 'new_edit_', handler: mockHandler2 })
     })
 
     it('should find handler by prefix matching', () => {
       expect(buttonHandler.canHandle('gen_user123')).toBe(true)
-      expect(buttonHandler.canHandle('edit_user456')).toBe(true)
+      expect(buttonHandler.canHandle('new_edit_user456')).toBe(true)
       expect(buttonHandler.getMatchingPrefix('gen_user123')).toBe('gen_')
-      expect(buttonHandler.getMatchingPrefix('edit_user456')).toBe('edit_')
+      expect(buttonHandler.getMatchingPrefix('new_edit_user456')).toBe('new_edit_')
     })
 
     it('should return undefined for non-matching custom ID', () => {
@@ -434,11 +434,11 @@ describe('ButtonHandler', () => {
 
       buttonHandler.registerHandlers([
         { prefix: 'gen_', handler: genHandler, description: 'Generate handler' },
-        { prefix: 'edit_', handler: editHandler, description: 'Edit handler' },
+        { prefix: 'new_edit_', handler: editHandler, description: 'Edit handler' },
       ])
 
       const genInteraction = createMockButtonInteraction({ customId: 'gen_user123' })
-      const editInteraction = createMockButtonInteraction({ customId: 'edit_user123' })
+      const editInteraction = createMockButtonInteraction({ customId: 'new_edit_user123' })
 
       await buttonHandler.handleButton(genInteraction)
       await buttonHandler.handleButton(editInteraction)
@@ -493,8 +493,8 @@ describe('ButtonHandler', () => {
         expect(actionRow.components).toHaveLength(2) // edit and regenerate buttons
         
         const buttons = actionRow.components
-        expect((buttons[0].data as any).custom_id).toMatch(/^edit_user123_\d+$/)
-        expect((buttons[1].data as any).custom_id).toMatch(/^regenerate_user123_\d+$/)
+        expect((buttons[0].data as any).custom_id).toMatch(/^new_edit_user123_\d+$/)
+        expect((buttons[1].data as any).custom_id).toMatch(/^new_regenerate_user123_\d+$/)
       })
 
       it('should create action buttons with custom options', () => {
@@ -512,8 +512,8 @@ describe('ButtonHandler', () => {
         expect(actionRow.components).toHaveLength(2)
         
         const buttons = actionRow.components
-        expect((buttons[0].data as any).custom_id).toBe('edit_user456_1234567890')
-        expect((buttons[1].data as any).custom_id).toBe('regenerate_user456_1234567890')
+        expect((buttons[0].data as any).custom_id).toBe('new_edit_user456_1234567890')
+        expect((buttons[1].data as any).custom_id).toBe('new_regenerate_user456_1234567890')
       })
     })
 
@@ -527,7 +527,7 @@ describe('ButtonHandler', () => {
         expect(actionRow.components).toHaveLength(1) // regenerate button only
         
         const button = actionRow.components[0]
-        expect((button.data as any).custom_id).toMatch(/^regenerate_user789_\d+$/)
+        expect((button.data as any).custom_id).toMatch(/^new_regenerate_user789_\d+$/)
       })
 
       it('should create regenerate-only button with custom timestamp', () => {
@@ -539,18 +539,18 @@ describe('ButtonHandler', () => {
         expect(actionRow.components).toHaveLength(1)
         
         const button = actionRow.components[0]
-        expect((button.data as any).custom_id).toBe('regenerate_user999_9876543210')
+        expect((button.data as any).custom_id).toBe('new_regenerate_user999_9876543210')
       })
     })
 
     describe('parseUserIdFromCustomId', () => {
       it('should parse user ID from edit button custom ID', () => {
-        const userId = buttonHandler.parseUserIdFromCustomId('edit_123456_1234567890')
+        const userId = buttonHandler.parseUserIdFromCustomId('new_edit_123456_1234567890')
         expect(userId).toBe('123456')
       })
 
       it('should parse user ID from regenerate button custom ID', () => {
-        const userId = buttonHandler.parseUserIdFromCustomId('regenerate_789012_1234567890')
+        const userId = buttonHandler.parseUserIdFromCustomId('new_regenerate_789012_1234567890')
         expect(userId).toBe('789012')
       })
 
@@ -562,12 +562,12 @@ describe('ButtonHandler', () => {
 
     describe('parseActionFromCustomId', () => {
       it('should parse action type from edit button', () => {
-        const action = buttonHandler.parseActionFromCustomId('edit_123_1234567890')
+        const action = buttonHandler.parseActionFromCustomId('new_edit_123_1234567890')
         expect(action).toBe('edit')
       })
 
       it('should parse action type from regenerate button', () => {
-        const action = buttonHandler.parseActionFromCustomId('regenerate_456_1234567890')
+        const action = buttonHandler.parseActionFromCustomId('new_regenerate_456_1234567890')
         expect(action).toBe('regenerate')
       })
 
@@ -580,19 +580,19 @@ describe('ButtonHandler', () => {
     describe('validateButtonInteraction', () => {
       it('should validate button interaction with expected prefix', () => {
         const interaction = createMockButtonInteraction({
-          customId: 'edit_user123_1234567890'
+          customId: 'new_edit_user123_1234567890'
         })
 
-        const isValid = buttonHandler.validateButtonInteraction(interaction, 'edit_')
+        const isValid = buttonHandler.validateButtonInteraction(interaction, 'new_edit_')
         expect(isValid).toBe(true)
       })
 
       it('should reject button interaction with wrong prefix', () => {
         const interaction = createMockButtonInteraction({
-          customId: 'regenerate_user123_1234567890'
+          customId: 'new_regenerate_user123_1234567890'
         })
 
-        const isValid = buttonHandler.validateButtonInteraction(interaction, 'edit_')
+        const isValid = buttonHandler.validateButtonInteraction(interaction, 'new_edit_')
         expect(isValid).toBe(false)
       })
 
@@ -601,7 +601,7 @@ describe('ButtonHandler', () => {
           customId: 'unknown_button'
         })
 
-        const isValid = buttonHandler.validateButtonInteraction(interaction, 'edit_')
+        const isValid = buttonHandler.validateButtonInteraction(interaction, 'new_edit_')
         expect(isValid).toBe(false)
       })
     })
@@ -610,7 +610,7 @@ describe('ButtonHandler', () => {
       it('should work with created buttons in handler workflow', async () => {
         // Register a handler for edit buttons
         buttonHandler.registerHandler({
-          prefix: 'edit_',
+          prefix: 'new_edit_',
           handler: mockHandler1,
           description: 'Edit button handler'
         })
@@ -630,7 +630,7 @@ describe('ButtonHandler', () => {
 
         // Should be handled by our registered handler
         expect(buttonHandler.canHandle(customId)).toBe(true)
-        expect(buttonHandler.getMatchingPrefix(customId)).toBe('edit_')
+        expect(buttonHandler.getMatchingPrefix(customId)).toBe('new_edit_')
 
         // Handle the interaction
         await buttonHandler.handleButton(interaction)

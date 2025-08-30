@@ -7,8 +7,6 @@ import { CommandHandler } from '../../../infrastructure/discord/handlers/Command
 import { CooldownHandler } from '../../../infrastructure/discord/handlers/CooldownHandler.js'
 import { ExtendedClient } from '../../../bot/types.js'
 import { ImageInteractionHandlers } from '../../../infrastructure/discord/handlers/ImageInteractionHandlers.js'
-import { handleRegenerateButton, handleRegenerateModal } from '../../../utils/regenerateImage.js'
-import { handleEditButton, handleEditModal } from '../../../utils/editImage.js'
 
 /**
  * Handles Discord interaction create events using the new handler architecture
@@ -39,57 +37,33 @@ export class InteractionCreateEvent extends BaseEvent {
     // Create new image interaction handlers using clean architecture
     const imageHandlers = new ImageInteractionHandlers()
 
-    // Create button handler and register both old and new handlers (parallel implementation)
+    // Create button handler with new architecture handlers only
     const buttonHandler = new ButtonHandler()
     buttonHandler.registerHandlers([
-      // Old handlers (still working)
-      {
-        prefix: 'regenerate_',
-        handler: handleRegenerateButton,
-        description: 'Handle image regeneration button clicks (legacy)',
-      },
-      {
-        prefix: 'edit_',
-        handler: handleEditButton,
-        description: 'Handle image edit button clicks (legacy)',
-      },
-      // New handlers using clean architecture
       {
         prefix: 'new_regenerate_',
         handler: imageHandlers.handleRegenerateButton.bind(imageHandlers),
-        description: 'Handle image regeneration button clicks (new architecture)',
+        description: 'Handle image regeneration button clicks',
       },
       {
         prefix: 'new_edit_',
         handler: imageHandlers.handleEditButton.bind(imageHandlers),
-        description: 'Handle image edit button clicks (new architecture)',
+        description: 'Handle image edit button clicks',
       },
     ])
 
-    // Create modal handler and register both old and new handlers (parallel implementation)
+    // Create modal handler with new architecture handlers only
     const modalHandler = new ModalHandler()
     modalHandler.registerHandlers([
-      // Old handlers (still working)
-      {
-        prefix: 'regenerate_modal_',
-        handler: handleRegenerateModal,
-        description: 'Handle image regeneration modal submissions (legacy)',
-      },
-      {
-        prefix: 'edit_modal_',
-        handler: handleEditModal,
-        description: 'Handle image edit modal submissions (legacy)',
-      },
-      // New handlers using clean architecture
       {
         prefix: 'new_regenerate_modal_',
         handler: imageHandlers.handleRegenerateModal.bind(imageHandlers),
-        description: 'Handle image regeneration modal submissions (new architecture)',
+        description: 'Handle image regeneration modal submissions',
       },
       {
         prefix: 'new_edit_modal_',
         handler: imageHandlers.handleEditModal.bind(imageHandlers),
-        description: 'Handle image edit modal submissions (new architecture)',
+        description: 'Handle image edit modal submissions',
       },
     ])
 

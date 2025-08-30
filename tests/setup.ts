@@ -33,8 +33,8 @@ jest.mock('discord.js', () => ({
     this.setupErrorHandlers = jest.fn()
     return this
   }),
-  Collection: jest.fn().mockImplementation(() => {
-    const store = new Map()
+  Collection: jest.fn().mockImplementation((entries) => {
+    const store = new Map(entries)
     return {
       set: (key: any, value: any) => {
         store.set(key, value)
@@ -45,7 +45,10 @@ jest.mock('discord.js', () => ({
       delete: (key: any) => store.delete(key),
       clear: () => store.clear(),
       get size() { return store.size },
-      forEach: (callback: any) => store.forEach(callback)
+      forEach: (callback: any) => store.forEach(callback),
+      keys: () => store.keys(),
+      values: () => store.values(),
+      entries: () => store.entries()
     }
   }),
   GatewayIntentBits: {

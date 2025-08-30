@@ -1,7 +1,18 @@
 import { ChatInputCommandInteraction } from 'discord.js'
 import { Command, ExtendedClient } from '@/bot/types.js'
 import logger from '@/config/logger.js'
-import { safeReply } from '@/utils/interactionHelpers.js'
+// Inline safeReply function since we removed the utils
+async function safeReply(interaction: ChatInputCommandInteraction, options: any): Promise<void> {
+  try {
+    if (interaction.replied || interaction.deferred) {
+      await interaction.editReply(options)
+    } else {
+      await interaction.reply(options)
+    }
+  } catch (error) {
+    logger.error('Failed to reply to interaction:', error)
+  }
+}
 import { CooldownHandler } from './CooldownHandler.js'
 
 /**

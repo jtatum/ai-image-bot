@@ -59,8 +59,8 @@ describe('EnhancedButtonBuilder', () => {
       expect(actionRow.components).toHaveLength(2)
       const button1Json = actionRow.components[0].toJSON() as any
       const button2Json = actionRow.components[1].toJSON() as any
-      expect(button1Json.custom_id).toMatch(/^edit_123456789_\d+$/)
-      expect(button2Json.custom_id).toMatch(/^regenerate_123456789_\d+$/)
+      expect(button1Json.custom_id).toMatch(/^new_edit_123456789_\d+$/)
+      expect(button2Json.custom_id).toMatch(/^new_regenerate_123456789_\d+$/)
     })
 
     it('should create only edit button when includeRegenerate is false', () => {
@@ -69,7 +69,7 @@ describe('EnhancedButtonBuilder', () => {
 
       expect(actionRow.components).toHaveLength(1)
       const button1Json = actionRow.components[0].toJSON() as any
-      expect(button1Json.custom_id).toMatch(/^edit_123456789_\d+$/)
+      expect(button1Json.custom_id).toMatch(/^new_edit_123456789_\d+$/)
     })
 
     it('should create only regenerate button when includeEdit is false', () => {
@@ -78,7 +78,7 @@ describe('EnhancedButtonBuilder', () => {
 
       expect(actionRow.components).toHaveLength(1)
       const button1Json = actionRow.components[0].toJSON() as any
-      expect(button1Json.custom_id).toMatch(/^regenerate_123456789_\d+$/)
+      expect(button1Json.custom_id).toMatch(/^new_regenerate_123456789_\d+$/)
     })
 
     it('should use custom labels when provided', () => {
@@ -108,8 +108,8 @@ describe('EnhancedButtonBuilder', () => {
       const options: ActionButtonOptions = { userId: '123456789', timestamp }
       const actionRow = builder.createImageActionButtons(options)
 
-      expect((actionRow.components[0].toJSON() as any).custom_id).toBe(`edit_123456789_${timestamp}`)
-      expect((actionRow.components[1].toJSON() as any).custom_id).toBe(`regenerate_123456789_${timestamp}`)
+      expect((actionRow.components[0].toJSON() as any).custom_id).toBe(`new_edit_123456789_${timestamp}`)
+      expect((actionRow.components[1].toJSON() as any).custom_id).toBe(`new_regenerate_123456789_${timestamp}`)
     })
 
     it('should use custom style when provided', () => {
@@ -128,7 +128,7 @@ describe('EnhancedButtonBuilder', () => {
 
       expect(actionRow.components).toHaveLength(1)
       const button1Json = actionRow.components[0].toJSON() as any
-      expect(button1Json.custom_id).toMatch(/^regenerate_123456789_\d+$/)
+      expect(button1Json.custom_id).toMatch(/^new_regenerate_123456789_\d+$/)
       expect((actionRow.components[0].toJSON() as any).label).toBe('🔄')
     })
   })
@@ -264,15 +264,15 @@ describe('EnhancedButtonBuilder', () => {
   describe('static utility methods', () => {
     describe('validateButtonInteraction', () => {
       it('should validate button interaction with correct prefix', () => {
-        const interaction = { customId: 'edit_123456789_1234567890' } as ButtonInteraction
-        const result = EnhancedButtonBuilder.validateButtonInteraction(interaction, 'edit_')
+        const interaction = { customId: 'new_edit_123456789_1234567890' } as ButtonInteraction
+        const result = EnhancedButtonBuilder.validateButtonInteraction(interaction, 'new_edit_')
 
         expect(result).toBe(true)
       })
 
       it('should reject button interaction with incorrect prefix', () => {
         const interaction = { customId: 'wrong_123456789_1234567890' } as ButtonInteraction
-        const result = EnhancedButtonBuilder.validateButtonInteraction(interaction, 'edit_')
+        const result = EnhancedButtonBuilder.validateButtonInteraction(interaction, 'new_edit_')
 
         expect(result).toBe(false)
       })
@@ -280,14 +280,14 @@ describe('EnhancedButtonBuilder', () => {
 
     describe('parseUserIdFromCustomId', () => {
       it('should parse userId from edit button customId', () => {
-        const customId = 'edit_123456789_1234567890'
+        const customId = 'new_edit_123456789_1234567890'
         const result = EnhancedButtonBuilder.parseUserIdFromCustomId(customId)
 
         expect(result).toBe('123456789')
       })
 
       it('should parse userId from regenerate button customId', () => {
-        const customId = 'regenerate_987654321_1234567890'
+        const customId = 'new_regenerate_987654321_1234567890'
         const result = EnhancedButtonBuilder.parseUserIdFromCustomId(customId)
 
         expect(result).toBe('987654321')
@@ -303,14 +303,14 @@ describe('EnhancedButtonBuilder', () => {
 
     describe('parseActionFromCustomId', () => {
       it('should parse edit action from customId', () => {
-        const customId = 'edit_123456789_1234567890'
+        const customId = 'new_edit_123456789_1234567890'
         const result = EnhancedButtonBuilder.parseActionFromCustomId(customId)
 
         expect(result).toBe('edit')
       })
 
       it('should parse regenerate action from customId', () => {
-        const customId = 'regenerate_123456789_1234567890'
+        const customId = 'new_regenerate_123456789_1234567890'
         const result = EnhancedButtonBuilder.parseActionFromCustomId(customId)
 
         expect(result).toBe('regenerate')
@@ -334,8 +334,8 @@ describe('ButtonBuilderFactory', () => {
 
       expect(actionRow.components).toHaveLength(2)
       const button1Json = actionRow.components[0].toJSON() as any
-      expect(button1Json.custom_id).toMatch(/^edit_123456789_\d+$/)
-      expect((actionRow.components[1].toJSON() as any).custom_id).toMatch(/^regenerate_123456789_\d+$/)
+      expect(button1Json.custom_id).toMatch(/^new_edit_123456789_\d+$/)
+      expect((actionRow.components[1].toJSON() as any).custom_id).toMatch(/^new_regenerate_123456789_\d+$/)
     })
 
     it('should maintain backward compatibility with utils/buttons.ts', () => {
@@ -355,7 +355,7 @@ describe('ButtonBuilderFactory', () => {
 
       expect(actionRow.components).toHaveLength(1)
       const button1Json = actionRow.components[0].toJSON() as any
-      expect(button1Json.custom_id).toMatch(/^regenerate_123456789_\d+$/)
+      expect(button1Json.custom_id).toMatch(/^new_regenerate_123456789_\d+$/)
       expect((actionRow.components[0].toJSON() as any).label).toBe('🔄')
     })
 

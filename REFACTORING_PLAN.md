@@ -176,6 +176,11 @@ src/
 
 - [ ] Update loaders to remove old loading code.
 - [ ] Remove fixtures for old code.
+- [ ] Migrate healthcheck to new architecture
+- [ ] Delete old event files from src/events/
+- [ ] Move remaining utils to shared/utils/
+- [ ] Delete obsolete utility files
+- [ ] Update all imports to use new locations
 
 ### Phase 6: Documentation and Final Validation
 

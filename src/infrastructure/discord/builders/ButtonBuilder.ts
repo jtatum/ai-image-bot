@@ -72,7 +72,7 @@ export class EnhancedButtonBuilder {
 
     if (includeEdit) {
       const editButton = new DiscordButtonBuilder()
-        .setCustomId(`edit_${userId}_${timestamp}`)
+        .setCustomId(`new_edit_${userId}_${timestamp}`)
         .setLabel(customLabels.edit || customEmojis.edit || '✏️')
         .setStyle(style)
 
@@ -81,7 +81,7 @@ export class EnhancedButtonBuilder {
 
     if (includeRegenerate) {
       const regenerateButton = new DiscordButtonBuilder()
-        .setCustomId(`regenerate_${userId}_${timestamp}`)
+        .setCustomId(`new_regenerate_${userId}_${timestamp}`)
         .setLabel(customLabels.regenerate || customEmojis.regenerate || '🔄')
         .setStyle(style)
 
@@ -194,7 +194,7 @@ export class EnhancedButtonBuilder {
    * Parse userId from button customId (for image action buttons)
    */
   static parseUserIdFromCustomId(customId: string): string | null {
-    const match = customId.match(/^(edit|regenerate)_(\d+)_\d+$/)
+    const match = customId.match(/^(?:new_)?(edit|regenerate)_(\d+)_\d+$/)
     return match ? match[2] : null
   }
 
@@ -202,7 +202,7 @@ export class EnhancedButtonBuilder {
    * Parse action type from button customId
    */
   static parseActionFromCustomId(customId: string): 'edit' | 'regenerate' | null {
-    const match = customId.match(/^(edit|regenerate)_\d+_\d+$/)
+    const match = customId.match(/^(?:new_)?(edit|regenerate)_\d+_\d+$/)
     return match ? (match[1] as 'edit' | 'regenerate') : null
   }
 

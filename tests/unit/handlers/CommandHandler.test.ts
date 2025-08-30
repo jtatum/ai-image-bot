@@ -6,21 +6,13 @@ import { Command, ExtendedClient } from '@/bot/types.js'
 import { createMockChatInputInteraction } from '../../helpers/mockInteractions.js'
 import { mockCommand } from '../../fixtures/mockCommand.js'
 
-// Mock the utilities
-jest.mock('@/utils/interactionHelpers.js', () => ({
-  safeReply: jest.fn() as jest.MockedFunction<any>,
-}))
-
 jest.mock('@/config/logger.js', () => ({
   info: jest.fn(),
   warn: jest.fn(),
   error: jest.fn(),
 }))
 
-import { safeReply } from '@/utils/interactionHelpers.js'
 import logger from '@/config/logger.js'
-
-const mockSafeReply = safeReply as jest.MockedFunction<any>
 const mockLogger = logger as jest.Mocked<typeof logger>
 
 describe('CommandHandler', () => {
@@ -63,9 +55,6 @@ describe('CommandHandler', () => {
       commandsWithActiveCooldowns: 0,
     })
     mockCooldownHandler.getActiveCooldowns.mockReturnValue([])
-
-    // Setup mock utilities
-    mockSafeReply.mockResolvedValue(undefined)
 
     commandHandler = new CommandHandler(mockClient, mockCooldownHandler)
   })
@@ -153,7 +142,7 @@ describe('CommandHandler', () => {
       await commandHandler.handleCommand(interaction)
 
       expect(mockLogger.error).toHaveBeenCalledWith('Error executing command test:', error)
-      expect(mockSafeReply).toHaveBeenCalledWith(interaction, {
+      expect(interaction.reply).toHaveBeenCalledWith({
         content: '❌ There was an error while executing this command!',
         ephemeral: true,
       })
@@ -242,8 +231,7 @@ describe('CommandHandler', () => {
   })
 
   describe('getCommandNames', () => {
-    it.skip('should return array of command names', () => {
-      // TODO: Fix Collection.keys() mocking
+    it('should return array of command names', () => {
       mockCommands.set('test1', mockCommand)
       mockCommands.set('test2', mockCommand)
       mockCommands.set('test3', mockCommand)
@@ -253,8 +241,7 @@ describe('CommandHandler', () => {
       expect(names).toEqual(['test1', 'test2', 'test3'])
     })
 
-    it.skip('should return empty array when no commands exist', () => {
-      // TODO: Fix Collection.keys() mocking
+    it('should return empty array when no commands exist', () => {
       const names = commandHandler.getCommandNames()
 
       expect(names).toEqual([])
@@ -335,29 +322,133 @@ describe('CommandHandler', () => {
     })
   })
 
-  describe('error handling edge cases', () => {
-    it('should handle safeReply failure during error handling', async () => {
+  describe('safeReply behavior', () => {
+    it('should call editReply when interaction is already replied', async () => {
+      const error = new Error('Test error')
+      const testCommand = { ...mockCommand }
+      testCommand.execute = jest.fn().mockImplementation(() => Promise.reject(error)) as any
+      mockCommands.set('test', testCommand)
+
+      const interaction = createMockChatInputInteraction()
+      interaction.replied = true
+      interaction.deferred = false
+      interaction.editReply = jest.fn() as any
+
+      await commandHandler.handleCommand(interaction)
+
+      expect(interaction.editReply).toHaveBeenCalledWith(expect.objectContaining({
+        content: '❌ There was an error while executing this command!',
+        ephemeral: true,
+      }))
+      expect(interaction.reply).not.toHaveBeenCalled()
+    })
+
+    it('should call editReply when interaction is deferred', async () => {
+      const error = new Error('Test error')
+      const testCommand = { ...mockCommand }
+      testCommand.execute = jest.fn().mockImplementation(() => Promise.reject(error)) as any
+      mockCommands.set('test', testCommand)
+
+      const interaction = createMockChatInputInteraction()
+      interaction.replied = false
+      interaction.deferred = true
+      interaction.editReply = jest.fn() as any
+
+      await commandHandler.handleCommand(interaction)
+
+      expect(interaction.editReply).toHaveBeenCalledWith(expect.objectContaining({
+        content: '❌ There was an error while executing this command!',
+        ephemeral: true,
+      }))
+      expect(interaction.reply).not.toHaveBeenCalled()
+    })
+
+    it('should call editReply when interaction is both replied and deferred', async () => {
+      const error = new Error('Test error')
+      const testCommand = { ...mockCommand }
+      testCommand.execute = jest.fn().mockImplementation(() => Promise.reject(error)) as any
+      mockCommands.set('test', testCommand)
+
+      const interaction = createMockChatInputInteraction()
+      interaction.replied = true
+      interaction.deferred = true
+      interaction.editReply = jest.fn() as any
+
+      await commandHandler.handleCommand(interaction)
+
+      expect(interaction.editReply).toHaveBeenCalledWith(expect.objectContaining({
+        content: '❌ There was an error while executing this command!',
+        ephemeral: true,
+      }))
+      expect(interaction.reply).not.toHaveBeenCalled()
+    })
+
+    it('should call reply when interaction is neither replied nor deferred', async () => {
+      const error = new Error('Test error')
+      const testCommand = { ...mockCommand }
+      testCommand.execute = jest.fn().mockImplementation(() => Promise.reject(error)) as any
+      mockCommands.set('test', testCommand)
+
+      const interaction = createMockChatInputInteraction()
+      interaction.replied = false
+      interaction.deferred = false
+
+      await commandHandler.handleCommand(interaction)
+
+      expect(interaction.reply).toHaveBeenCalledWith({
+        content: '❌ There was an error while executing this command!',
+        ephemeral: true,
+      })
+      expect(interaction.editReply).not.toHaveBeenCalled()
+    })
+
+    it('should handle reply errors gracefully and log them', async () => {
       const commandError = new Error('Command execution failed')
-      const replyError = new Error('Reply failed')
+      const replyError = new Error('Discord API error')
 
       const testCommand = { ...mockCommand }
       testCommand.execute = jest.fn().mockImplementation(() => Promise.reject(commandError)) as any
       mockCommands.set('test', testCommand)
 
-      mockSafeReply.mockRejectedValue(replyError)
-
       const interaction = createMockChatInputInteraction()
+      interaction.reply = jest.fn().mockImplementation(() => Promise.reject(replyError)) as any
 
-      // Should propagate the safeReply error when reply fails during error handling
-      await expect(commandHandler.handleCommand(interaction)).rejects.toThrow(replyError)
+      // safeReply should catch the error and not let it bubble up
+      await expect(commandHandler.handleCommand(interaction)).resolves.not.toThrow()
 
       expect(mockLogger.error).toHaveBeenCalledWith('Error executing command test:', commandError)
-      expect(mockSafeReply).toHaveBeenCalledWith(interaction, {
+      expect(mockLogger.error).toHaveBeenCalledWith('Failed to reply to interaction:', replyError)
+      expect(interaction.reply).toHaveBeenCalledWith({
         content: '❌ There was an error while executing this command!',
         ephemeral: true,
       })
     })
 
+    it('should handle editReply errors gracefully when interaction is replied', async () => {
+      const commandError = new Error('Command execution failed')
+      const editReplyError = new Error('Edit reply failed')
+
+      const testCommand = { ...mockCommand }
+      testCommand.execute = jest.fn().mockImplementation(() => Promise.reject(commandError)) as any
+      mockCommands.set('test', testCommand)
+
+      const interaction = createMockChatInputInteraction()
+      interaction.replied = true
+      interaction.editReply = jest.fn().mockImplementation(() => Promise.reject(editReplyError)) as any
+
+      // safeReply should catch the error and not let it bubble up
+      await expect(commandHandler.handleCommand(interaction)).resolves.not.toThrow()
+
+      expect(mockLogger.error).toHaveBeenCalledWith('Error executing command test:', commandError)
+      expect(mockLogger.error).toHaveBeenCalledWith('Failed to reply to interaction:', editReplyError)
+      expect(interaction.editReply).toHaveBeenCalledWith(expect.objectContaining({
+        content: '❌ There was an error while executing this command!',
+        ephemeral: true,
+      }))
+    })
+  })
+
+  describe('error handling edge cases', () => {
     it('should handle interaction.reply failure during cooldown response', async () => {
       const replyError = new Error('Reply failed')
 
@@ -372,7 +463,7 @@ describe('CommandHandler', () => {
       const interaction = createMockChatInputInteraction()
       interaction.reply = jest.fn().mockImplementation(() => Promise.reject(replyError)) as any
 
-      // Should not throw despite reply failure
+      // Should throw the reply error
       await expect(commandHandler.handleCommand(interaction)).rejects.toThrow(replyError)
     })
   })
