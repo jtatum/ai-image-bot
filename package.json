@@ -1,5 +1,5 @@
 {
-  "name": "gemini-bot",
+  "name": "ai-image-bot",
   "version": "1.0.0",
   "description": "Production-grade Discord bot with comprehensive features",
   "main": "dist/index.js",

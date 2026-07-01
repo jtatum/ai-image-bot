@@ -1,4 +1,4 @@
-# Gemini Discord Bot
+# AI Image Bot
 
 A Discord bot that generates images using Google's Gemini AI model.
 
@@ -23,8 +23,8 @@ A Discord bot that generates images using Google's Gemini AI model.
 1. Clone and install dependencies:
 
 ```bash
-git clone <repository-url>
-cd gemini-bot
+git clone https://github.com/jtatum/ai-image-bot.git
+cd ai-image-bot
 npm install
 ```
 
