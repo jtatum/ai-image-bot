@@ -40,9 +40,11 @@ export class ImageInteractionHandlers {
     try {
       // Extract original prompt from the message content
       const messageContent = interaction.message.content
-      // Try new format first (> prompt), then fall back to old format (**Label:** prompt)
-      const newFormatMatch = messageContent.match(/^> (.+)$/m)
-      const oldFormatMatch = messageContent.match(/\*\*[^:]+:\*\* (.+)/)
+      // Try new format first (> prompt), then fall back to old format (**Label:** prompt).
+      // The prompt is always the last part of the message and may span several lines
+      // (the regenerate and edit modals use paragraph inputs), so capture to the end.
+      const newFormatMatch = messageContent.match(/^> ([\s\S]+)/m)
+      const oldFormatMatch = messageContent.match(/\*\*[^:]+:\*\* ([\s\S]+)/)
       const originalPrompt = newFormatMatch?.[1] || oldFormatMatch?.[1] || ''
 
       logger.debug('Regenerate button clicked', {
